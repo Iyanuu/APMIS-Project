@@ -69,7 +69,7 @@ public class UserEditForm extends AbstractEditForm<UserDto> {
             loc(PERSON_DATA_HEADING_LOC) +
                     fluidRowLocs(UserDto.FIRST_NAME, UserDto.LAST_NAME) +
                     fluidRowLocs(UserDto.USER_EMAIL, UserDto.PHONE) +
-                    fluidRowLocs(USER_EMAIL_DESC_LOC, USER_PHONE_DESC_LOC) +
+                    fluidRowLocs(USER_EMAIL_DESC_LOC, USER_PHONE_DESC_LOC) + 
                     fluidRowLocsCss(VSPACE_TOP_3, UserDto.LANGUAGE, "") +
 
                     loc(ADDRESS_HEADING_LOC) +
@@ -145,6 +145,13 @@ public class UserEditForm extends AbstractEditForm<UserDto> {
             RegionReferenceDto regionDto = (RegionReferenceDto) e.getProperty().getValue();
             FieldHelper
                     .updateItems(district, regionDto != null ? FacadeProvider.getDistrictFacade().getAllActiveByRegion(regionDto.getUuid()) : null);
+        });
+        
+        region.addValueChangeListener(e -> {
+            FieldHelper.removeItems(community);
+           DistrictReferenceDto districtDto = (DistrictReferenceDto) e.getProperty().getValue();
+            FieldHelper
+                    .updateItems(community, regionDto != null ? FacadeProvider.getDistrictFacade().getAllActiveByDistrict(districtDto.getUuid()) : null);
         });
 
         // for informant
