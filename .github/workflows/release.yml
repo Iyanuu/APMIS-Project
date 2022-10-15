@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Build Changelog
-        id: github_release 
+        id: changelog 
         uses: TriPSs/conventional-changelog-action@v3.7.1
         with:
            github-token: ${{ secrets.RELEASE }}
@@ -20,4 +20,4 @@ jobs:
       - name: Create Release
         uses: mikepenz/action-gh-release@v0.2.0-a03 #softprops/action-gh-release
         with:
-          body: ${{steps.github_release.outputs.changelog}}
+          body: ${{steps.changelog.outputs.clean_changelog}}
