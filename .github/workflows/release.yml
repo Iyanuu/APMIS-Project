@@ -12,21 +12,6 @@ jobs:
       - name: Build Changelog
         id: github_release
         uses: TriPSs/conventional-changelog-action@v3.7.1
-        with:
-          configurationJson: |
-            {
-              "template": "#{{CHANGELOG}}\n\n<details>\n<summary>Uncategorized</summary>\n\n#{{UNCATEGORIZED}}\n</details>",
-              "categories": [
-                {
-                    "title": "## 💬 Other",
-                    "labels": ["other"]
-                },
-                {
-                    "title": "## 📦 Dependencies",
-                    "labels": ["dependencies"]
-                }
-              ]
-            }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
