@@ -12,6 +12,8 @@ jobs:
       - name: Build Changelog
         id: github_release
         uses: TriPSs/conventional-changelog-action@v3.7.1
+        with:
+           github-token: ${{ secrets.RELEASE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
