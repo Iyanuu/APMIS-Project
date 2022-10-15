@@ -10,14 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Build Changelog
-        id: changelog 
-        uses: TriPSs/conventional-changelog-action@v3.7.1
-        with:
-           github-token: ${{ secrets.RELEASE }}
+        id: github_release
+        uses: docker://decathlon/release-notes-generator-action:2.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release
         uses: mikepenz/action-gh-release@v0.2.0-a03 #softprops/action-gh-release
         with:
-          body: ${{steps.changelog.outputs.clean_changelog}}
+          body: ${{steps.github_release.outputs.changelog}}
