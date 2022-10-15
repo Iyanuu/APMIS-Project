@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Build Changelog
-        id: github_release
+        id: github_release 
         uses: TriPSs/conventional-changelog-action@v3.7.1
         with:
            github-token: ${{ secrets.RELEASE }}
