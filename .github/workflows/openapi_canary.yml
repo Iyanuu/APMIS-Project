@@ -13,12 +13,12 @@ jobs:
 
     steps:
       - name: Checkout development branch
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           path: head
 
       - name: Checkout master branch
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           ref: master
           path: base

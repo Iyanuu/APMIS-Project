@@ -27,7 +27,9 @@ jobs:
     # Name the Job
     name: Lint Code Base
     # Set the agent to run on
-    runs-on: Ubuntu-20.04
+    # ubuntu-20.04 runners were retired by GitHub; jobs requesting that label
+    # are never scheduled and end up cancelled.
+    runs-on: ubuntu-latest
 
     ##################
     # Load all steps #
@@ -37,7 +39,7 @@ jobs:
       # Checkout the code base #
       ##########################
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           # Full git history is needed to get a proper list of changed files within `super-linter`
           fetch-depth: 0
