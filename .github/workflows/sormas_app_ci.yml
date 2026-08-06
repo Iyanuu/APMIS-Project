@@ -87,6 +87,40 @@ jobs:
           chmod +x ./gradlew
           ./gradlew :app:assembleDebug :app:testDebugUnitTest --no-daemon --stacktrace
 
+      - name: Publish unit test summary
+        # GitHub does not render JUnit XML natively, so without this the run page shows
+        # only a green tick and gives no indication of how many tests actually ran.
+        if: always()
+        working-directory: ./sormas-app
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import glob, xml.etree.ElementTree as ET
+
+          files = sorted(glob.glob("app/build/test-results/testDebugUnitTest/TEST-*.xml"))
+          rows = []
+          tests = failures = errors = skipped = 0
+          for path in files:
+              suite = ET.parse(path).getroot()
+              n = int(suite.get("tests", 0))
+              f = int(suite.get("failures", 0))
+              e = int(suite.get("errors", 0))
+              s = int(suite.get("skipped", 0))
+              tests += n; failures += f; errors += e; skipped += s
+              rows.append((suite.get("name", path), n, f, e, s))
+
+          print("### Android unit tests\n")
+          if not files:
+              print("No test results were produced.")
+          else:
+              status = "all passing" if failures == 0 and errors == 0 else "FAILING"
+              print(f"**{tests} tests across {len(rows)} classes - {status}**")
+              print(f"({failures} failures, {errors} errors, {skipped} skipped)\n")
+              print("| Test class | Tests | Failures | Errors | Skipped |")
+              print("|---|---:|---:|---:|---:|")
+              for name, n, f, e, s in rows:
+                  print(f"| `{name}` | {n} | {f} | {e} | {s} |")
+          PY
+
       - name: Upload unit test report
         if: always()
         uses: actions/upload-artifact@v4
