@@ -76,10 +76,16 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle-
 
       - name: Build debug APK and run unit tests
+        # Scoped to the debug variant on purpose. `:app:test` is an aggregate task that
+        # runs the unit tests of every variant, which pulls the release variant into the
+        # build, and the committed app/google-services.json only declares a client for
+        # de.symeda.sormas.app.apmis.debug. A release build therefore fails from a clean
+        # checkout with "No matching client found for package name". Release Firebase
+        # configuration is not in the repository, so CI can only meaningfully verify debug.
         working-directory: ./sormas-app
         run: |
           chmod +x ./gradlew
-          ./gradlew :app:assembleDebug :app:test --no-daemon --stacktrace
+          ./gradlew :app:assembleDebug :app:testDebugUnitTest --no-daemon --stacktrace
 
       - name: Upload unit test report
         if: always()
