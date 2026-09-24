@@ -68,6 +68,15 @@ public interface AdoService<ADO extends AbstractDomainObject> {
 	void ensurePersisted(ADO ado) throws EntityExistsException;
 
 	/**
+	 * 
+	 * 
+	 * 
+	 * @param ados
+	 * @throws EntityExistsException
+	 */
+	void ensurePersistedAll(List<ADO> ados) throws EntityExistsException;
+	
+	/**
 	 * JPA-Session flushen
 	 */
 	void doFlush();

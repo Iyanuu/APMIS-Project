@@ -51,6 +51,7 @@ public class Community extends InfrastructureAdo {
 	public static final String POPULATIONDATA_0_4 = "populationdata_0_4";
 	public static final String POPULATIONDATA_5_10 = "populationdata_5_10";
 	public static final String POPULATIONDATA_4_23M = "populationdata_4_23M";
+	public static final String POPULATIONDATA_4_59M = "populationdata_4_59M";
 	public static final String MODALITY = "modality";
 	public static final String STATUS = "status";
 
@@ -72,6 +73,8 @@ public class Community extends InfrastructureAdo {
 	private Long populationdata_0_4;
 	private Long populationdata_5_10;
 	private Long populationdata_4_23M;
+	private Long populationdata_4_59M;
+
 
 
 	public String getName() {
@@ -177,7 +180,16 @@ public class Community extends InfrastructureAdo {
 	public void setPopulationdata_4_23M(Long populationdata_4_23M) {
 		this.populationdata_4_23M = populationdata_4_23M;
 	}
+	
+	public Long getPopulationdata_4_59M() {
+		return populationdata_4_59M;
+	}
 
+	public void setPopulationdata_4_59M(Long populationdata_4_59M) {
+		this.populationdata_4_59M = populationdata_4_59M;
+	}
+
+	
 	@Enumerated(EnumType.STRING)
 	public Modality getModality() {
 		return modality;

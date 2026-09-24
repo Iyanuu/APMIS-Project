@@ -7,6 +7,7 @@ public enum AgeGroup {
 	AGE_0_4,
 	AGE_5_10,
 	AGE_4_23M,
+	AGE_4_59M,
 	AGE_10_14,
 	AGE_15_19,
 	AGE_20_24,

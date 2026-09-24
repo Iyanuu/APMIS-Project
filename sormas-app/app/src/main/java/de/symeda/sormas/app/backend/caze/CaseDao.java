@@ -224,11 +224,11 @@ public class CaseDao extends AbstractAdoDao<Case> {
 		User user = ConfigProvider.getUser();
 		caze.setReportingUser(user);
 
-		if (user.hasUserRole(UserRole.COMMUNITY_OFFICER)) {
+		if (user != null && user.hasUserRole(UserRole.COMMUNITY_OFFICER)) {
 			caze.setSurveillanceOfficer(user);
-		} else if (user.hasUserRole(UserRole.HOSPITAL_INFORMANT)
+		} else if (user != null && (user.hasUserRole(UserRole.HOSPITAL_INFORMANT)
 			|| user.hasUserRole(UserRole.HOSPITAL_INFORMANT)
-			|| user.hasUserRole(UserRole.POE_INFORMANT)) {
+			|| user.hasUserRole(UserRole.POE_INFORMANT))) {
 			caze.setSurveillanceOfficer(user.getAssociatedOfficer());
 		}
 

@@ -4,7 +4,7 @@ import de.symeda.sormas.api.i18n.I18nProperties;
 
 public enum CampaignRounds {
 
-	NID("NID"), SNID("SNID"), CASE_RESPOND("Case Respond"), MOCK_UP("Mopping-Up"), TRAINING("Training");
+	NID("NID"), SNID("SNID"), CASE_RESPOND("Case Respond"), MOCK_UP("Mopping-Up"), TRAINING("Training"), IPV("IPV");
 
 	private String displayName;
 	

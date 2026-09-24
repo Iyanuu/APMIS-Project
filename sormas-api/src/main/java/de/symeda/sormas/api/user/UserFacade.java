@@ -45,6 +45,8 @@ public interface UserFacade {
 	UserDto saveUserFcmMobile(@Valid UserDto dto);
 
 	UserDto saveUser(@Valid UserDto dto);
+	
+	List<UserDto> saveUsers(@Valid List<UserDto> dtos);
 
 	boolean isLoginUnique(String uuid, String userName);
 

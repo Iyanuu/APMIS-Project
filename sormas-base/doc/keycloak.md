@@ -37,7 +37,7 @@ admin support for some users, in which case the admin will use her own email add
 
 The SORMAS Realm relies on 4 clients:
 
-* **sormas-ui** - handles access to the SORMAS wen UI
+* **apmis-flow** - handles access to the APMIS UI
 * **sormas-app** - handles access to the SORMAS Android App
 * **sormas-rest** - handles access to the SORMAS API
 * **sormas-backend** - handles SORMAS server requests

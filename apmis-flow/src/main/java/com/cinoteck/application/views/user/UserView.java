@@ -730,9 +730,9 @@ public class UserView extends VerticalLayout implements RouterLayout, BeforeEnte
 			notification.open();
 			return;
 		} else {
-//			BulkUsersEditDataDialog bulkUsersEditDataDialog = new BulkUsersEditDataDialog(selectedItems, userDto,
-//					filterDataProvider);
-//			bulkUsersEditDataDialog.open();
+			BulkUsersEditDataDialog bulkUsersEditDataDialog = new BulkUsersEditDataDialog(selectedItems, userDto,
+					filterDataProvider);
+			bulkUsersEditDataDialog.open();
 
 		}
 
@@ -740,16 +740,18 @@ public class UserView extends VerticalLayout implements RouterLayout, BeforeEnte
 
 	private void configureGridMultiSelect() {
 		selectionModel = (GridMultiSelectionModel<UserDto>) grid.setSelectionMode(Grid.SelectionMode.MULTI);
-
-		selectionModel.setSelectAllCheckboxVisibility(GridMultiSelectionModel.SelectAllCheckboxVisibility.VISIBLE);
-
+		selectionModel.setSelectAllCheckboxVisibility(GridMultiSelectionModel.SelectAllCheckboxVisibility.VISIBLE);		
 		selectionModel.addSelectionListener(event -> {
-			if (event.getAllSelectedItems().isEmpty()) {
+
+			Set<UserDto> currentSelection =
+					new HashSet<>(event.getAllSelectedItems());
+
+			if (currentSelection.isEmpty()) {
 				selectedItems.clear();
-			} else if (event.getAllSelectedItems().size() == getDataProviderSize()) {
+			} else if (currentSelection.size() == getDataProviderSize()) {
+				selectedItems.clear();
 				selectedItems.addAll(fetchAllItems());
-			}
-			grid.getDataProvider().refreshAll();
+			} 
 		});
 
 		ComponentRenderer<Checkbox, UserDto> checkboxRenderer = new ComponentRenderer<>(item -> {
@@ -770,14 +772,14 @@ public class UserView extends VerticalLayout implements RouterLayout, BeforeEnte
 	}
 
 	private Set<UserDto> fetchAllItems() {
-		Stream<UserDto> stream = dataProvider.fetch(new Query<>());
+		Stream<UserDto> stream = filterDataProvider.fetch(new Query<>());
 		Set<UserDto> allItems = new HashSet<>();
 		stream.forEach(allItems::add);
 		return allItems;
 	}
 
 	private int getDataProviderSize() {
-		return dataProvider.size(new Query<>());
+		return filterDataProvider.size(new Query<>());
 	}
 
 	private String rolesConf(UserDto usrdto) {

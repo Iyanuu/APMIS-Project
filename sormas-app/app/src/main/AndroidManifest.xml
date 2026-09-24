@@ -430,8 +430,8 @@
             android:launchMode="singleTop">
         </activity> -->
         <!-- Only needed for androidTest - found no other way to manifest this -->
-        <!--activity
-            android:name=".TestBackendActivity" /-->
+        <activity
+            android:name=".TestBackendActivity" />
 
 <!--        <activity-->
 <!--            android:name=".barcode.BarcodeActivity" />-->

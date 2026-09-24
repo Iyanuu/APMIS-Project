@@ -27,6 +27,7 @@ import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -514,16 +515,76 @@ public class CampaignsView extends VerticalLayout {
 		secondTab.setSizeFull();
 		// you can replace this with your custom layout
 
-		tabsheetParent.add("Campaign Basics", campaignTab);
+		Tab campaignBasicsTab = tabsheetParent.add("Campaign Basics", campaignTab);
 		Tab assocTab = tabsheetParent.add("Associate Campaign", secondTab);
+		final AssociateCampaign[] associateCampaignHolder = new AssociateCampaign[1];
+		final Tab[] currentSelectedTab = new Tab[] { campaignBasicsTab };
+		final Tab[] pendingTargetTab = new Tab[1];
+		final boolean[] isProgrammaticTabSwitch = new boolean[] { false };
 
 		tabsheetParent.addSelectedChangeListener(event -> {
-			if (event.getSelectedTab() != null && event.getSelectedTab().equals(assocTab)) {
-				if (secondTab.getComponentCount() == 0) {
-					AssociateCampaign assoccampformLayout = new AssociateCampaign(formData);
-					secondTab.add(assoccampformLayout);
-				}
+			if (isProgrammaticTabSwitch[0]) {
+				return;
 			}
+
+			Tab selectedTab = event.getSelectedTab();
+			if (selectedTab == null) {
+				return;
+			}
+			
+			if (selectedTab.equals(assocTab) && secondTab.getComponentCount() == 0) {
+				associateCampaignHolder[0] = new AssociateCampaign(formData);
+				secondTab.add(associateCampaignHolder[0]);
+			}
+			
+
+			if (currentSelectedTab[0] != null && currentSelectedTab[0].equals(assocTab)
+					&& !selectedTab.equals(assocTab) && associateCampaignHolder[0] != null
+					&& associateCampaignHolder[0].hasUnsavedChanges()) {
+				pendingTargetTab[0] = selectedTab;
+
+				isProgrammaticTabSwitch[0] = true;
+				try {
+					tabsheetParent.setSelectedTab(assocTab);
+				} finally {
+					isProgrammaticTabSwitch[0] = false;
+				}
+
+				Dialog confirmLeaveDialog = new Dialog();
+				confirmLeaveDialog.setHeaderTitle("Unsaved changes");
+				confirmLeaveDialog.setCloseOnEsc(false);
+				confirmLeaveDialog.setCloseOnOutsideClick(false);
+
+				Span warningText = new Span(
+						"You have unsaved changes in Associate Campaign. Leave to discard changes or stay to save them first.");
+				Button stayButton = new Button("Stay", click -> confirmLeaveDialog.close());
+				stayButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+				Button leaveButton = new Button("Leave", click -> {
+					confirmLeaveDialog.close();
+					associateCampaignHolder[0].discardUnsavedChangesForNavigation();
+					if (pendingTargetTab[0] != null) {
+						isProgrammaticTabSwitch[0] = true;
+						try {
+							tabsheetParent.setSelectedTab(pendingTargetTab[0]);
+							currentSelectedTab[0] = pendingTargetTab[0];
+						} finally {
+							isProgrammaticTabSwitch[0] = false;
+							pendingTargetTab[0] = null;
+						}
+					}
+				});
+				leaveButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+
+				confirmLeaveDialog.add(warningText);
+				confirmLeaveDialog.getFooter().add(stayButton, leaveButton);
+				confirmLeaveDialog.open();
+				return;
+			}
+
+
+
+			currentSelectedTab[0] = selectedTab;
 		});
 
 		layoutParent.add(tabsheetParent);

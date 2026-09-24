@@ -20,6 +20,9 @@ import de.symeda.sormas.api.user.FormAccess;
 import de.symeda.sormas.api.utils.DataHelper;
 import de.symeda.sormas.api.utils.FieldConstraints;
 
+/**
+ * 
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CampaignFormMetaDto extends EntityDto {
 
@@ -31,7 +34,6 @@ public class CampaignFormMetaDto extends EntityDto {
 	public static final String CAMPAIGN_FORM_ELEMENTS = "campaignFormElements";
 	public static final String FORM_CATEGORY = "formCategory";
 	public static final String DAYSTOEXPIRE = "daysExpired";
-	public static final String DISTRICTENTRY = "districtentry";
 	public static final String FORM_TYPE = "formType";
 	public static final String MODALITY = "modality";
 	public static final String FORM_NAME_PASHTO = "formname_ps_af"; 
@@ -39,6 +41,7 @@ public class CampaignFormMetaDto extends EntityDto {
 	public static final String ARCHIVED = "archived";
 	public static final String FORMGROUPUID = "formgroupuuid";
 	public static final String FORMVERSION = "formversion";
+	public static final String GEOGRAPHYLEVEL = "geographylevel";
 
 	
 	public static final String AREA = "area";
@@ -66,9 +69,12 @@ public class CampaignFormMetaDto extends EntityDto {
 	
 	@Enumerated(EnumType.STRING)
 	private FormAccess formCategory;
+	
+	@Enumerated(EnumType.STRING)
+	private CampaignFormMetaGeographyLevel geographyLevel;
+	
 	private int daysExpired;
 
-	private boolean districtentry = false;
 	private boolean archived = false;
 	
 	private String fieldId;
@@ -214,14 +220,14 @@ public class CampaignFormMetaDto extends EntityDto {
 		this.daysExpired = daysExpired;
 	}
 
-	public boolean isDistrictentry() {
-		return districtentry;
+
+	public CampaignFormMetaGeographyLevel getGeographyLevel() {
+		return geographyLevel;
 	}
 
-	public void setDistrictentry(boolean districtentry) {
-		this.districtentry = districtentry;
+	public void setGeographyLevel(CampaignFormMetaGeographyLevel geographyLevel) {
+		this.geographyLevel = geographyLevel;
 	}
-
 
 	public String getFormGroupUuid() {
 		return formGroupUuid;

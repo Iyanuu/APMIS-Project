@@ -19,6 +19,8 @@ import java.util.List;
 
 import de.symeda.sormas.api.PushResult;
 import de.symeda.sormas.api.campaign.data.CampaignFormDataDto;
+import de.symeda.sormas.api.campaign.data.CampaignFormImageValue;
+import de.symeda.sormas.api.campaign.data.ImageUploadRequest;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -38,4 +40,6 @@ public interface CampaignFormDataFacadeRetro {
 
 	@GET("campaignFormData/uuids")
 	Call<List<String>> pullUuids();
-}
+
+	@POST("apmisrestserver/image/upload")
+	Call<CampaignFormImageValue> uploadImage(@Body ImageUploadRequest request);}

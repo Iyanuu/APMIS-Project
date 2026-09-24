@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
+
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
@@ -21,6 +23,15 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import java.util.Base64;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.WebApplicationException;
+
+import de.symeda.sormas.api.campaign.data.CampaignFormImageValue;
+import de.symeda.sormas.api.campaign.data.ImageUploadRequest;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +43,9 @@ import de.symeda.sormas.api.campaign.CampaignReferenceDto;
 import de.symeda.sormas.api.campaign.data.CampaignAggregateDataDto;
 import de.symeda.sormas.api.campaign.data.CampaignFormDataDto;
 import de.symeda.sormas.api.campaign.data.CampaignFormDataHistoryExtractDto;
+import de.symeda.sormas.api.campaign.data.CampaignFormImageUploadDto;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaReferenceDto;
+import de.symeda.sormas.api.document.DocumentDto;
 import de.symeda.sormas.api.infrastructure.PopulationDataDto;
 import de.symeda.sormas.api.report.CampaignDataExtractDto;
 //import de.symeda.sormas.backend.campaign.data.CampaignFormData;
@@ -267,10 +280,71 @@ public class ApmisCampaignResource {// extends EntityDtoResource {
 		return FacadeProvider.getCampaignFacade().getAllActive();
 	}
 
+	@Context
+	UriInfo urlInfo;
 	@GET
 	@Path("/populationdata")
-	public List<PopulationDataDto> getAllPopulationData() {
-		return FacadeProvider.getPopulationDataFacade().getAllPopulationData();
+	public List<PopulationDataDto> getAllPopulationData(@QueryParam("fetchFromIndex") Integer fetchFromIndex,
+			@QueryParam("fetchSize") Integer fetchSize) {
+		
+	    if (fetchFromIndex == null) {
+	    	fetchFromIndex = 0;
+	    }
+	    
+	    if (fetchSize == null) {
+	    	String cleanFetchSize = urlInfo.getQueryParameters().getFirst("amp;fetchSize");
+		    if (cleanFetchSize == null) {
+	    	fetchSize = 50; 
+		    }else {
+		    	fetchSize = Integer.parseInt(cleanFetchSize); 
+		    }
+	    }
+	    
+		return FacadeProvider.getPopulationDataFacade().getAllPopulationDataByLimit(fetchFromIndex, fetchSize);
 	}
+	
+    @GET
+    @Path("/image/{imageId}")
+    @Produces("image/*")
+    public Response getImage(@PathParam("imageId") String imageId) {
+        try {
+            byte[] bytes = FacadeProvider.getCampaignFormImageFacade().readImage(imageId);
+            if (bytes == null || bytes.length == 0) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+            // Try to get the correct MIME type
+            String mimeType = "image/jpeg"; // fallback
+            try {
+                DocumentDto doc = FacadeProvider.getDocumentFacade().getDocumentByUuid(imageId);
+                if (doc != null && StringUtils.isNotBlank(doc.getMimeType())) {
+                    mimeType = doc.getMimeType();
+                }
+            } catch (Exception ignored) {
+                // fallback to extension detection or magic bytes
+            }
+            return Response.ok(bytes).type(mimeType).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                           .entity("Failed to load image").build();
+        }
+    }
+    
+    
+   @POST
+   @Path("/image/upload")
+   @Consumes(MediaType.APPLICATION_JSON)
+   public CampaignFormImageValue uploadImage(CampaignFormImageUploadDto request) {
+       if (request == null || StringUtils.isBlank(request.getBase64Content())) {
+           throw new WebApplicationException(Response.Status.BAD_REQUEST);
+       }
+       try {
+           byte[] bytes = Base64.getDecoder().decode(request.getBase64Content());
+           return FacadeProvider.getCampaignFormImageFacade()
+                   .uploadImage(request.getCampaignFormDataUuid(), request.getImageValue(), bytes);
+       } catch (Exception e) {
+           logger.error("Image upload failed", e);
+           throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+       }
+   }
 
 }

@@ -114,13 +114,13 @@ public final class DiseaseConfigurationCache {
 		Set<Disease> diseases = new HashSet<>();
 
 		if (Boolean.TRUE.equals(active)) {
-			if (currentUser.getLimitedDisease() != null && activeDiseases.contains(currentUser.getLimitedDisease())) {
+			if (currentUser != null && currentUser.getLimitedDisease() != null && activeDiseases.contains(currentUser.getLimitedDisease())) {
 				diseases.add(currentUser.getLimitedDisease());
 			} else {
 				diseases.addAll(activeDiseases);
 			}
 		} else if (Boolean.FALSE.equals(active)) {
-			if (currentUser.getLimitedDisease() != null && inactiveDiseases.contains(currentUser.getLimitedDisease())) {
+			if (currentUser != null && currentUser.getLimitedDisease() != null && inactiveDiseases.contains(currentUser.getLimitedDisease())) {
 				diseases.add(currentUser.getLimitedDisease());
 			} else {
 				diseases.addAll(inactiveDiseases);
@@ -128,13 +128,13 @@ public final class DiseaseConfigurationCache {
 		}
 
 		if (Boolean.TRUE.equals(primary)) {
-			if (currentUser.getLimitedDisease() != null && primaryDiseases.contains(currentUser.getLimitedDisease())) {
+			if (currentUser != null && currentUser.getLimitedDisease() != null && primaryDiseases.contains(currentUser.getLimitedDisease())) {
 				diseases.add(currentUser.getLimitedDisease());
 			} else {
 				diseases.addAll(primaryDiseases);
 			}
 		} else if (Boolean.FALSE.equals(primary)) {
-			if (currentUser.getLimitedDisease() != null && nonPrimaryDiseases.contains(currentUser.getLimitedDisease())) {
+			if (currentUser != null && currentUser.getLimitedDisease() != null && nonPrimaryDiseases.contains(currentUser.getLimitedDisease())) {
 				diseases.add(currentUser.getLimitedDisease());
 			} else {
 				diseases.addAll(nonPrimaryDiseases);
@@ -142,13 +142,13 @@ public final class DiseaseConfigurationCache {
 		}
 
 		if (Boolean.TRUE.equals(caseBased)) {
-			if (currentUser.getLimitedDisease() != null && caseBasedDiseases.contains(currentUser.getLimitedDisease())) {
+			if (currentUser != null && currentUser.getLimitedDisease() != null && caseBasedDiseases.contains(currentUser.getLimitedDisease())) {
 				diseases.add(currentUser.getLimitedDisease());
 			} else {
 				diseases.addAll(caseBasedDiseases);
 			}
 		} else if (Boolean.FALSE.equals(caseBased)) {
-			if (currentUser.getLimitedDisease() != null && aggregateDiseases.contains(currentUser.getLimitedDisease())) {
+			if (currentUser != null && currentUser.getLimitedDisease() != null && aggregateDiseases.contains(currentUser.getLimitedDisease())) {
 				diseases.add(currentUser.getLimitedDisease());
 			} else {
 				diseases.addAll(aggregateDiseases);
@@ -222,7 +222,7 @@ public final class DiseaseConfigurationCache {
 
 	public List<Disease> getAllActiveDiseases() {
 		User currentUser = ConfigProvider.getUser();
-		if (currentUser.getLimitedDisease() != null) {
+		if (currentUser != null && currentUser.getLimitedDisease() != null) {
 			ArrayList<Disease> list = new ArrayList<>();
 			if (isActiveDisease(currentUser.getLimitedDisease())) {
 				list.add(currentUser.getLimitedDisease());
@@ -239,7 +239,7 @@ public final class DiseaseConfigurationCache {
 
 	public List<Disease> getAllPrimaryDiseases() {
 		User currentUser = ConfigProvider.getUser();
-		if (currentUser.getLimitedDisease() != null) {
+		if (currentUser != null && currentUser.getLimitedDisease() != null) {
 			ArrayList<Disease> list = new ArrayList<>();
 			if (isPrimaryDisease(currentUser.getLimitedDisease())) {
 				list.add(currentUser.getLimitedDisease());
@@ -264,7 +264,7 @@ public final class DiseaseConfigurationCache {
 
 	public List<Disease> getAllDiseasesWithFollowUp() {
 		User currentUser = ConfigProvider.getUser();
-		if (currentUser.getLimitedDisease() != null) {
+		if (currentUser != null && currentUser.getLimitedDisease() != null) {
 			ArrayList<Disease> list = new ArrayList<>();
 			if (hasFollowUp(currentUser.getLimitedDisease())) {
 				list.add(currentUser.getLimitedDisease());

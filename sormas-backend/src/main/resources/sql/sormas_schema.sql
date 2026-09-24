@@ -11721,8 +11721,61 @@ VALUES (494, 'Addition of Modality and Status column to Cluster #937');
 
 
 ALTER TABLE public.campaigns ADD COLUMN vaccineType VARCHAR(50) NULL DEFAULT '';
-
 INSERT INTO schema_version (version_number, comment) VALUES (495, 'Addition of vaccine type column to Campaign');
+
+
+ALTER TABLE community ADD COLUMN populationdata_4_59M int8 NOT NULL DEFAULT 0;
+
+UPDATE public.populationdata SET agegroup = 'AGE_4_59M' WHERE agegroup = 'AGE_4_23M';
+
+UPDATE public.community SET populationdata_4_59m = populationdata_4_59m + populationdata_4_23m, populationdata_4_23m = 0 WHERE populationdata_4_23m <> 0;
+
+INSERT INTO schema_version (version_number, comment) VALUES (496, 'Addition of Population target 4-59m column to Campaign');
+
+
+
+ALTER TABLE public.campaignformmeta ALTER COLUMN districtentry DROP DEFAULT;
+ALTER TABLE public.campaignformmeta ALTER COLUMN districtentry TYPE varchar(50)
+    USING (
+        CASE
+            WHEN districtentry THEN 'DISTRICT'
+            ELSE 'CLUSTER'
+        END
+    );
+ALTER TABLE public.campaignformmeta RENAME COLUMN districtentry TO geographylevel;
+ALTER TABLE public.campaignformmeta ALTER COLUMN geographylevel SET DEFAULT 'CLUSTER';
+
+
+
+INSERT INTO schema_version (version_number, comment) VALUES (497, 'Updating District Entry to geography Type');
+
+
+ALTER TABLE public.campaignformmeta_history  ALTER COLUMN districtentry DROP DEFAULT;
+ALTER TABLE public.campaignformmeta_history ALTER COLUMN districtentry TYPE varchar(50)
+    USING (
+        CASE
+            WHEN districtentry THEN 'DISTRICT'
+            ELSE 'CLUSTER'
+        END
+    );
+ALTER TABLE public.campaignformmeta_history RENAME COLUMN districtentry TO geographylevel;
+ALTER TABLE public.campaignformmeta_history ALTER COLUMN geographylevel SET DEFAULT 'CLUSTER';
+
+
+
+ALTER TABLE public.campaignformdata ALTER COLUMN area_id SET NOT NULL;
+
+ALTER TABLE public.campaignformdata ALTER COLUMN region_id DROP NOT NULL;
+
+ALTER TABLE public.campaignformdata ALTER COLUMN district_id DROP NOT NULL;
+
+ALTER TABLE public.campaignformdata ALTER COLUMN community_id DROP NOT NULL;
+
+ALTER TABLE public.campaignformdata ADD CONSTRAINT fk_campaignformdata_area_id FOREIGN KEY (area_id) REFERENCES public.areas(id);
+
+INSERT INTO schema_version (version_number, comment) VALUES (498, 'Updating District Entry to geography Type on history table and allowing Area, Province data entry');
+
+
 
 
 

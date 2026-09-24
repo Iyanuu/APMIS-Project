@@ -29,17 +29,38 @@ public class AttributeConverter extends ModelResolver {
     }
 
     @Override
-    protected void applyBeanValidatorAnnotations(Schema property, Annotation[] annotations, Schema parent) {
-        super.applyBeanValidatorAnnotations(property, annotations, parent);
-        Map<String, Annotation> annos = new HashMap<String, Annotation>();
+    protected boolean applyBeanValidatorAnnotations(Schema property,
+    		Annotation[] annotations,
+    		Schema parent,
+    		boolean applyNotNullAnnotations) {
+    	
+        boolean modified = super.applyBeanValidatorAnnotations(
+                property, annotations, parent, applyNotNullAnnotations);
+
+        Map<String, Annotation> annos = new HashMap<>();
         if (annotations != null) {
             for (Annotation anno : annotations) {
                 annos.put(anno.annotationType().getName(), anno);
             }
         }
+
         if (parent != null && annos.containsKey("de.symeda.sormas.api.utils.Required")) {
-            addRequiredItem(parent, property.getName());
+            modified = updateRequiredItem(parent, property.getName()) || modified;
         }
+
+        return modified;
+    	
+    	
+//        super.applyBeanValidatorAnnotations(property, annotations, parent);
+//        Map<String, Annotation> annos = new HashMap<String, Annotation>();
+//        if (annotations != null) {
+//            for (Annotation anno : annotations) {
+//                annos.put(anno.annotationType().getName(), anno);
+//            }
+//        }
+//        if (parent != null && annos.containsKey("de.symeda.sormas.api.utils.Required")) {
+//            addRequiredItem(parent, property.getName());
+//        }
     }
 
 

@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import androidx.annotation.Nullable;
 
+import de.symeda.sormas.api.campaign.form.CampaignFormMetaGeographyLevel;
 import de.symeda.sormas.api.caze.CaseDataDto;
 import de.symeda.sormas.api.infrastructure.facility.FacilityDto;
 import de.symeda.sormas.api.infrastructure.facility.FacilityType;
@@ -288,21 +289,155 @@ public final class InfrastructureDaoHelper {
 			districtField.initializeSpinner(initialDistricts);
 		}
 
-//		if (communityField != null) {
-//			System.out.println("initialCommunitiesinitialCommunities222222" + initialCommunities.size());
-//			communityField.initializeSpinner(initialCommunities);
-//
-//			if(isEdit){
-//				communityField.setEnabled(false);
-//			}
-//		}
-
 		//temp fix
 
 		if(ConfigProvider.getUser().getUserRoles().contains(UserRole.SURVEILLANCE_OFFICER)){ // District Officer
 			communityField.setVisibility(GONE);
 		}else{
+
 			communityField.setVisibility(VISIBLE);
+		};
+	}
+
+
+	public static void initializeRegionAreaFieldsByGeographyLevel(
+			final ControlSpinnerField areaField,
+			List<Item> initialAreas,
+			Area initialArea,
+			final ControlSpinnerField regionField,
+			List<Item> initialRegions,
+			Region initialRegion,
+			final ControlSpinnerField districtField,
+			List<Item> initialDistricts,
+			District initialDistrict,
+			final ControlSpinnerField communityField,
+			List<Item> initialCommunities,
+			Community initialCommunity, String geographyLevel,
+			Boolean isEdit) {
+
+		Item areaItem = initialArea != null ? DataUtils.toItem(initialArea) : null;
+		Item regionItem = initialRegion != null ? DataUtils.toItem(initialRegion) : null;
+		Item districtItem = initialDistrict != null ? DataUtils.toItem(initialDistrict) : null;
+		Item communityItem = initialCommunity != null ? DataUtils.toItem(initialCommunity) : null;
+
+		if (areaItem != null && !initialAreas.contains(areaItem)) {
+			initialAreas.add(areaItem);
+		}
+		if (regionItem != null && !initialRegions.contains(regionItem)) {
+			initialRegions.add(regionItem);
+		}
+
+		if (districtItem != null && !initialDistricts.contains(districtItem)) {
+			initialDistricts.add(districtItem);
+		}
+
+		if (communityItem != null && !initialCommunities.contains(communityItem)) {
+			initialCommunities.add(communityItem);
+		}
+
+//		System.out.println("initialCommunitiesinitialCommunities inside --" + initialCommunities.size());
+
+		areaField.initializeSpinner(initialAreas, field -> {
+			Area selectedArea = (Area) field.getValue();
+			if (selectedArea != null) {
+				List<Item> newRegions = loadRegionsByArea(selectedArea);
+				if (initialRegion != null && selectedArea.equals(initialRegion.getArea()) && !newRegions.contains(regionItem)) {
+					newRegions.add(regionItem);
+				}
+				regionField.setSpinnerData(newRegions, regionField.getValue());
+			} else {
+				regionField.setSpinnerData(null);
+			}
+		});
+
+		regionField.initializeSpinner(initialRegions, field -> {
+			Region selectedRegion = (Region) field.getValue();
+			if (selectedRegion != null) {
+				List<Item> newDistricts;
+
+				if (ConfigProvider.getUser().getUserRoles().contains(UserRole.SURVEILLANCE_OFFICER)
+						&& initialRegion != null
+						&& selectedRegion.equals(initialRegion)) {
+					newDistricts = new ArrayList<>(initialDistricts);
+				} else {
+					newDistricts = loadDistricts(selectedRegion);
+				}
+
+				if (initialDistrict != null && selectedRegion.equals(initialDistrict.getRegion()) && !newDistricts.contains(districtItem)) {
+					newDistricts.add(districtItem);
+				}
+
+				districtField.setSpinnerData(newDistricts, districtField.getValue());
+				if (ConfigProvider.getUser().getUserRoles().contains(UserRole.SURVEILLANCE_OFFICER)){
+					districtField.setValue(null);
+				}
+				areaField.setValue(selectedRegion.getArea());
+			} else {
+				districtField.setSpinnerData(null);
+			}
+		});
+//hide community here after setting the fist maching community under the selected district... this should be down without user intereaction
+
+		if (communityField != null) {
+			districtField.initializeSpinner(initialDistricts, field -> {
+				District selectedDistrict = (District) field.getValue();
+				if (selectedDistrict != null) {
+
+					communityField.setSpinnerData(initialCommunities, communityField.getValue());
+					if (!ConfigProvider.getUser().getUserRoles().contains(UserRole.SURVEILLANCE_OFFICER)){
+						communityField.setValue(null);
+						communityField.setVisibility(VISIBLE);
+
+					}else{
+						communityField.setVisibility(GONE);
+					}
+
+					if(isEdit){
+						communityField.setEnabled(false);
+						communityField.initializeSpinner(initialCommunities);
+
+					}
+				} else {
+					communityField.setSpinnerData(null);
+					if(isEdit){
+						communityField.setEnabled(false);
+						communityField.initializeSpinner(initialCommunities);
+
+					}
+				}
+			});
+		} else {
+			districtField.initializeSpinner(initialDistricts);
+		}
+
+		//temp fix
+		if(ConfigProvider.getUser().getUserRoles().contains(UserRole.SURVEILLANCE_OFFICER)){ // District Officer
+			communityField.setVisibility(GONE);
+		}else{
+			if(geographyLevel.equals(CampaignFormMetaGeographyLevel.REGION.toString())){
+				regionField.setVisibility(GONE);
+				regionField.setSpinnerData(null);
+
+				districtField.setVisibility(GONE);
+				districtField.setSpinnerData(null);
+
+				communityField.setVisibility(GONE);
+				communityField.setSpinnerData(null);
+
+			}else if(geographyLevel.equals(CampaignFormMetaGeographyLevel.PROVINCE.toString())){
+				districtField.setVisibility(GONE);
+				districtField.setSpinnerData(null);
+
+				communityField.setVisibility(GONE);
+				communityField.setSpinnerData(null);
+
+			}else if(geographyLevel.equals(CampaignFormMetaGeographyLevel.DISTRICT.toString())){
+				communityField.setVisibility(GONE);
+				communityField.setSpinnerData(null);
+
+			}else {
+				communityField.setVisibility(VISIBLE);
+			}
 		};
 	}
 

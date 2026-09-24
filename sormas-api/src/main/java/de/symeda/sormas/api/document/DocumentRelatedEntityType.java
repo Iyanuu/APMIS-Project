@@ -22,7 +22,8 @@ public enum DocumentRelatedEntityType {
 	CONTACT,
 	ACTION,
 	EVENT,
-	TRAVEL_ENTRY;
+	TRAVEL_ENTRY,
+	CAMPAIGN_FORM_DATA;
 
 	public String toString() {
 		return I18nProperties.getEnumCaption(this);

@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -65,6 +66,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -100,6 +102,7 @@ import de.symeda.sormas.api.campaign.data.CampaignFormDataIndexDto;
 import de.symeda.sormas.api.campaign.form.CampaignFormElement;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaDto;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaExpiryDto;
+import de.symeda.sormas.api.campaign.form.CampaignFormMetaGeographyLevel;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaHistoryExtractDto;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaReferenceDto;
 import de.symeda.sormas.api.i18n.Captions;
@@ -188,7 +191,7 @@ public class CampaignDataView extends VerticalLayout
 
 	NumberFormat arabicFormat = NumberFormat.getInstance();
 
-	Column<CampaignFormDataIndexDto> clusterNumberColumn, ccodeColumn, formNameColumn, clusterNameColumn,
+	Column<CampaignFormDataIndexDto> provinceNameColumn, pCodeColumn, districtNameColumn, dCodeColumn, clusterNumberColumn, ccodeColumn, formNameColumn, clusterNameColumn,
 			publishedColumn, verifiedColumn;
 
 	ComboBox<CampaignFormMetaReferenceDto> newForm = new ComboBox<>();
@@ -199,6 +202,8 @@ public class CampaignDataView extends VerticalLayout
 
 	GridMultiSelectionModel<CampaignFormDataIndexDto> selectionModel;
 	private Set<CampaignFormDataIndexDto> selectedItems = new HashSet<>();
+	
+	
 
 	// Counters for tracking creation
 	private int transposdeDataAnchorCreationCount = 0;
@@ -1196,7 +1201,7 @@ public class CampaignDataView extends VerticalLayout
 								CampaignFormMetaDto formDatax = FacadeProvider.getCampaignFormMetaFacade()
 										.getCampaignFormMetaByUuid(e.getValue().getUuid());
 
-								boolean fff = formDatax.isDistrictentry();
+								CampaignFormMetaGeographyLevel formGeographyLevel = formDatax.getGeographyLevel();
 								
 								List districtuuids =  new ArrayList<>();
 								
@@ -1215,7 +1220,7 @@ public class CampaignDataView extends VerticalLayout
 								}
 
 								CampaignFormDataEditForm cam = new CampaignFormDataEditForm(e.getValue(),
-										campaignz.getValue(), false, null, grid, fff, campaign, expiryDto, popDto);
+										campaignz.getValue(), false, null, grid, formGeographyLevel, campaign, expiryDto, popDto);
 								// add(cam);
 
 								newForm.setValue(null);
@@ -2262,15 +2267,7 @@ public class CampaignDataView extends VerticalLayout
 		languageHandler();
 		setMargin(false);
 
-		boolean isActiveFormDistrictLevel = false;
-
-		if (campaignFormCombo.getValue() != null) {
-			CampaignFormMetaDto campaignFormMetaData = FacadeProvider.getCampaignFormMetaFacade()
-					.getCampaignFormMetaByUuid(campaignFormCombo.getValue().getUuid());
-			isActiveFormDistrictLevel = campaignFormMetaData.isDistrictentry();
-		}
-
-		System.out.println("District leval for ? ------------" + isActiveFormDistrictLevel);
+  
 		grid = new Grid<>(CampaignFormDataIndexDto.class, false);
 //		grid.setSelectionMode(SelectionMode.SINGLE);
 		grid.setColumnReorderingAllowed(true);
@@ -2391,14 +2388,14 @@ public class CampaignDataView extends VerticalLayout
 			grid.addColumn(rCodeRender).setHeader(I18nProperties.getCaption(Captions.Area_externalId)).setSortable(true)
 					.setResizable(true).setAutoWidth(true)
 					.setTooltipGenerator(e -> I18nProperties.getCaption(Captions.Area_externalId));
-			grid.addColumn(CampaignFormDataIndexDto.REGION).setHeader(I18nProperties.getCaption(Captions.region))
+			provinceNameColumn = grid.addColumn(CampaignFormDataIndexDto.REGION).setHeader(I18nProperties.getCaption(Captions.region))
 					.setSortable(true).setResizable(true).setAutoWidth(true).setTooltipGenerator(e -> e.getRegion());
-			grid.addColumn(pCodeRender).setHeader(I18nProperties.getCaption(Captions.Region_externalID))
+			pCodeColumn = grid.addColumn(pCodeRender).setHeader(I18nProperties.getCaption(Captions.Region_externalID))
 					.setSortable(true).setResizable(true).setAutoWidth(true)
 					.setTooltipGenerator(e -> I18nProperties.getCaption(Captions.Region_externalID));
-			grid.addColumn(CampaignFormDataIndexDto.DISTRICT).setHeader(I18nProperties.getCaption(Captions.district))
+			districtNameColumn = grid.addColumn(CampaignFormDataIndexDto.DISTRICT).setHeader(I18nProperties.getCaption(Captions.district))
 					.setSortable(true).setResizable(true).setAutoWidth(true).setTooltipGenerator(e -> e.getDistrict());
-			grid.addColumn(dCodeRender).setHeader(I18nProperties.getCaption(Captions.District_externalID))
+			dCodeColumn = grid.addColumn(dCodeRender).setHeader(I18nProperties.getCaption(Captions.District_externalID))
 					.setSortable(true).setResizable(true).setAutoWidth(true)
 					.setTooltipGenerator(e -> I18nProperties.getCaption(Captions.District_externalID));
 
@@ -2459,14 +2456,14 @@ public class CampaignDataView extends VerticalLayout
 			grid.addColumn(rCodeRender).setHeader(I18nProperties.getCaption(Captions.Area_externalId)).setSortable(true)
 					.setResizable(true).setAutoWidth(true)
 					.setTooltipGenerator(e -> I18nProperties.getCaption(Captions.Area_externalId));
-			grid.addColumn(CampaignFormDataIndexDto.REGION).setHeader(I18nProperties.getCaption(Captions.region))
+			provinceNameColumn = grid.addColumn(CampaignFormDataIndexDto.REGION).setHeader(I18nProperties.getCaption(Captions.region))
 					.setSortable(true).setResizable(true).setAutoWidth(true).setTooltipGenerator(e -> e.getRegion());
-			grid.addColumn(pCodeRender).setHeader(I18nProperties.getCaption(Captions.Region_externalID))
+			pCodeColumn = grid.addColumn(pCodeRender).setHeader(I18nProperties.getCaption(Captions.Region_externalID))
 					.setSortable(true).setResizable(true).setAutoWidth(true)
 					.setTooltipGenerator(e -> I18nProperties.getCaption(Captions.Region_externalID));
-			grid.addColumn(CampaignFormDataIndexDto.DISTRICT).setHeader(I18nProperties.getCaption(Captions.district))
+			districtNameColumn = grid.addColumn(CampaignFormDataIndexDto.DISTRICT).setHeader(I18nProperties.getCaption(Captions.district))
 					.setSortable(true).setResizable(true).setAutoWidth(true).setTooltipGenerator(e -> e.getDistrict());
-			grid.addColumn(dCodeRender).setHeader(I18nProperties.getCaption(Captions.District_externalID))
+			dCodeColumn =  grid.addColumn(dCodeRender).setHeader(I18nProperties.getCaption(Captions.District_externalID))
 					.setSortable(true).setResizable(true).setAutoWidth(true)
 					.setTooltipGenerator(e -> I18nProperties.getCaption(Captions.District_externalID));
 
@@ -2535,31 +2532,34 @@ public class CampaignDataView extends VerticalLayout
 					.setSortable(true).setResizable(true).setAutoWidth(true)
 					.setTooltipGenerator(e -> e.getRcode().toString()).setFooter(CampaignFormDataIndexDto.RCODE);
 
-			grid.addColumn(CampaignFormDataIndexDto.REGION).setHeader(I18nProperties.getCaption(Captions.region))
+			provinceNameColumn = grid.addColumn(CampaignFormDataIndexDto.REGION).setHeader(I18nProperties.getCaption(Captions.region))
 //					createHeaderComponent(I18nProperties.getCaption(Captions.region), I18nProperties.getCaption(Captions.region)))
 					.setSortable(true).setResizable(true).setAutoWidth(true).setTooltipGenerator(e -> e.getRegion())
 					.setFooter(I18nProperties.getCaption(Captions.region).toLowerCase());
 
-			grid.addColumn(CampaignFormDataIndexDto.PCODE)
+			pCodeColumn = grid.addColumn(CampaignFormDataIndexDto.PCODE)
 					.setHeader(I18nProperties.getCaption(Captions.Region_externalID))
 //					createHeaderComponent(I18nProperties.getCaption(Captions.Region_externalID), I18nProperties.getCaption(Captions.Region_externalID)))
 					.setSortable(true).setResizable(true).setAutoWidth(true).setTooltipGenerator(e -> {
+					    Integer pcode = e.getPcode();
+					    return pcode == null ? "" : String.valueOf(pcode);
 
-						int pcode = e.getPcode();
-						return "" + pcode;
 					}).setFooter(CampaignFormDataIndexDto.PCODE);
-			grid.addColumn(CampaignFormDataIndexDto.DISTRICT).setHeader(I18nProperties.getCaption(Captions.district))
+			districtNameColumn = grid.addColumn(CampaignFormDataIndexDto.DISTRICT).setHeader(I18nProperties.getCaption(Captions.district))
 //			createHeaderComponent(I18nProperties.getCaption(Captions.district),I18nProperties.getCaption(Captions.district)))
 					.setSortable(true).setResizable(true).setAutoWidth(true).setTooltipGenerator(e -> e.getDistrict())
 					.setFooter(CampaignFormDataIndexDto.DISTRICT);
-			grid.addColumn(CampaignFormDataIndexDto.DCODE)
+			dCodeColumn =  grid.addColumn(CampaignFormDataIndexDto.DCODE)
 					.setHeader(I18nProperties.getCaption(Captions.District_externalID))
 //					.setHeaderText("Your Tooltip Text")
 //					createHeaderComponent(I18nProperties.getCaption(Captions.District_externalID),I18nProperties.getCaption(Captions.District_externalID)))
 					.setSortable(true).setResizable(true).setAutoWidth(true).setFooter(CampaignFormDataIndexDto.DCODE)
 					.setTooltipGenerator(e -> {
-						int dcode = e.getDcode();
-						return "" + dcode;
+//						.setTooltipGenerator(e -> {
+						    Integer dcode = e.getDcode();
+						    return dcode == null ? "" : String.valueOf(dcode);
+//						});
+					    							
 					});
 
 //			if(!isActiveFormDistrictLevel) {
@@ -2668,7 +2668,7 @@ public class CampaignDataView extends VerticalLayout
 
 								CampaignFormDataEditForm cam = new CampaignFormDataEditForm(
 										formData.getCampaignFormMeta(), campaignz.getValue(), true, formData.getUuid(),
-										grid, formMeta.isDistrictentry(), campaign, expiryDto, popDto);
+										grid, formMeta.getGeographyLevel(), campaign, expiryDto, popDto);
 							}
 						} else {
 							Notification notification = new Notification();
@@ -2709,7 +2709,7 @@ public class CampaignDataView extends VerticalLayout
 							.get(0);
 					CampaignDto campaign = FacadeProvider.getCampaignFacade()
 							.getByUuid(criteria.getCampaign().getUuid()); // campaignz.getValue().getUuid());
-
+					System.out.println( e.getSource().getSelectionModel().getFirstSelectedItem().get().getFormType() + "=========================================");
 					if (checkFormValidityByPhase(e.getValue().getFormType().toString().toLowerCase(), campaign,
 							expiryDto)) {
 				
@@ -2720,7 +2720,7 @@ public class CampaignDataView extends VerticalLayout
 								.getCampaignFormMetaByUuid(campaignFormCombo.getValue().getUuid());
 
 						CampaignFormDataEditForm cam = new CampaignFormDataEditForm(formData.getCampaignFormMeta(),
-								campaignz.getValue(), true, formData.getUuid(), grid, formMeta.isDistrictentry(),
+								campaignz.getValue(), true, formData.getUuid(), grid, formMeta.getGeographyLevel(),
 								campaign, expiryDto, popDto);
 
 					} else {
@@ -2806,16 +2806,46 @@ public class CampaignDataView extends VerticalLayout
 			CampaignFormMetaDto formData = FacadeProvider.getCampaignFormMetaFacade()
 					.getCampaignFormMetaByUuid(campaignFormCombo.getValue().getUuid());
 
-			boolean isDistictLevelData = formData.isDistrictentry();
+			CampaignFormMetaGeographyLevel formGeographyLevel = formData.getGeographyLevel();
 
-			if (isDistictLevelData) {
+			if (formGeographyLevel.equals(CampaignFormMetaGeographyLevel.REGION)) {
+				
+//				if (clusterNameColumn != null) {
+					clusterNameColumn.setVisible(false);
+					clusterNumberColumn.setVisible(false);
+					ccodeColumn.setVisible(false);
+//				}
+				
+//				if (districtNameColumn != null) {
+					districtNameColumn.setVisible(false);
+					dCodeColumn.setVisible(false);
+//				}
+				
+				
+				if (provinceNameColumn != null) {
+					provinceNameColumn.setVisible(false);
+					pCodeColumn.setVisible(false);
+				}
+
+			}else if(formGeographyLevel.equals(CampaignFormMetaGeographyLevel.PROVINCE)) {
 				if (clusterNameColumn != null) {
 					clusterNameColumn.setVisible(false);
 					clusterNumberColumn.setVisible(false);
 					ccodeColumn.setVisible(false);
 				}
-
-			} else {
+				
+				if (districtNameColumn != null) {
+					districtNameColumn.setVisible(false);
+					dCodeColumn.setVisible(false);
+				}
+				
+			}else if(formGeographyLevel.equals(CampaignFormMetaGeographyLevel.DISTRICT)) {
+				if (clusterNameColumn != null) {
+					clusterNameColumn.setVisible(false);
+					clusterNumberColumn.setVisible(false);
+					ccodeColumn.setVisible(false);
+				}
+			}else {
 				clusterNameColumn.setVisible(true);
 				clusterNumberColumn.setVisible(true);
 				ccodeColumn.setVisible(true);
@@ -2824,50 +2854,64 @@ public class CampaignDataView extends VerticalLayout
 
 	}
 
-	private String clusterNumberLabelGenerator(CommunityReferenceDto communityReferenceDto) {
 
-		return (communityReferenceDto.getNumber() + " | " + communityReferenceDto.getCaption());
-
-	}
-
-	private void export(Grid<CampaignFormDataIndexDto> grid, TextArea result) {
-		// Fetch all data from the grid in the current sorted order
-		Stream<CampaignFormDataIndexDto> persons = null;
-		Set<CampaignFormDataIndexDto> selection = grid.asMultiSelect().getValue();
-		if (selection != null && selection.size() > 0) {
-			persons = selection.stream();
-		} else {
-//			persons = dataView.getItems();
-		}
-
-		StringWriter output = new StringWriter();
-		StatefulBeanToCsv<CampaignFormDataIndexDto> writer = new StatefulBeanToCsvBuilder<CampaignFormDataIndexDto>(
-				output).build();
-		try {
-			writer.write(persons);
-		} catch (Exception e) {
-			output.write("An error occured during writing: " + e.getMessage());
-		}
-
-		result.setValue(output.toString());
-	}
-
-	private void setDataProvider() {
-		DataProvider<CampaignFormDataIndexDto, CampaignFormDataCriteria> dataProvider = DataProvider
-				.fromFilteringCallbacks(
-						query -> FacadeProvider.getCampaignFormDataFacade()
-								.getIndexList(criteria, query.getOffset(), query.getLimit(),
-										query.getSortOrders().stream()
-												.map(sortOrder -> new SortProperty(sortOrder.getSorted(),
-														sortOrder.getDirection() == SortDirection.ASCENDING))
-												.collect(Collectors.toList()))
-								.stream(),
-						query -> (int) FacadeProvider.getCampaignFormDataFacade().count(criteria));
-		grid.setDataProvider(dataProvider);
-	}
 
 	public void addCustomColumn(String property, String caption, String fieldsType, List<MapperUtil> options) {
 		if (!property.toString().contains("readonly")) {
+			if (fieldsType != null && fieldsType.equalsIgnoreCase("image")) {
+				grid.addColumn(new ComponentRenderer<>(item -> {
+					CampaignFormDataEntry formValue = item.getFormValues().stream()
+							.filter(v -> property.equals(v.getId()))
+							.findFirst()
+							.orElse(null);
+
+					if (formValue == null || formValue.getValue() == null) {
+						return new Span("No image");
+					}
+
+					Object val = formValue.getValue();
+					String previewDataUrl = null;
+
+					if (val instanceof Map) {
+						Map<?, ?> map = (Map<?, ?>) val;
+						Object url = map.get("previewUrl");
+						if (url != null) {
+							previewDataUrl = url.toString();
+						}
+					} else if (val instanceof List) {
+						List<?> list = (List<?>) val;
+						if (!list.isEmpty()) {
+							Object first = list.get(0);
+							if (first instanceof Map) {
+								Map<?, ?> map = (Map<?, ?>) first;
+								Object url = map.get("previewUrl");
+								if (url != null) {
+									previewDataUrl = url.toString();
+								}
+							}
+						}
+					}
+
+					if (previewDataUrl == null || previewDataUrl.isEmpty()) {
+						return new Span("No preview");
+					}
+
+					Image thumbnail = new Image(previewDataUrl, "Thumbnail");
+					thumbnail.setWidth("40px");
+					thumbnail.setHeight("40px");
+					thumbnail.getStyle().set("object-fit", "cover");
+					thumbnail.getStyle().set("cursor", "pointer");
+					return thumbnail;
+				}))
+				.setHeader(caption)
+				.setSortable(false)
+				.setResizable(true)
+				.setAutoWidth(true)
+				.setTooltipGenerator(e -> "Image: " + caption);
+				return;
+			}
+			
+			
 			grid.addColumn(e -> {
 				CampaignFormDataEntry formValue = e.getFormValues().stream().filter(v -> v.getId().equals(property))
 						.findFirst().orElse(null);
@@ -2908,6 +2952,53 @@ public class CampaignDataView extends VerticalLayout
 					}
 					return formValueCaption;
 
+				}else if (fieldsType != null && fieldsType.equalsIgnoreCase("image")) {
+			
+				            if (formValue == null || formValue.getValue() == null) {
+				                return new Span("No image");
+				            }
+				            
+				            Object val = formValue.getValue();
+				            String imageId = null;
+				            //Single Image Map 
+				            if (val instanceof Map) {
+				                Map<?, ?> map = (Map<?, ?>) val;
+				                Object id = map.get("imageId");
+				                if (id != null) {
+				                    imageId = id.toString();
+				                }
+				            } 
+				            //Multiple image
+				            else if (val instanceof List) {
+				                List<?> list = (List<?>) val;
+				                if (!list.isEmpty()) {
+				                    Object first = list.get(0);
+				                    if (first instanceof Map) {
+				                        Map<?, ?> map = (Map<?, ?>) first;
+				                        Object id = map.get("imageId");
+				                        if (id != null) {
+				                            imageId = id.toString();
+				                        }
+				                    }
+				                }
+				            }
+				            
+				            if (imageId == null || imageId.isEmpty()) {
+				                return new Span("No image");
+				            }
+				            
+				            String previewUrl = "/sormas-rest/apmisrestserver/image/" + imageId;
+				            Image thumbnail = new Image(previewUrl, "Image thumbnail");
+				            thumbnail.setWidth("40px");
+				            thumbnail.setHeight("40px");
+				            thumbnail.getStyle().set("object-fit", "cover");
+				            // Optional: add a click listener to open a larger preview
+				            thumbnail.getElement().addEventListener("click", ex -> {
+				                // You could open a dialog with the full image
+				            });
+				            return thumbnail;
+				   
+					
 				}
 //	                else if(fieldsType != null && (fieldsType.equalsIgnoreCase("checkboxbasic"))) {
 //	                	
@@ -3042,11 +3133,7 @@ public class CampaignDataView extends VerticalLayout
 		countRowItems.setId("rowCount");
 	}
 
-	private void closeEditor() {
-		campaignFormDataEditForm.setVisible(false);
-		grid.setVisible(true);
-		removeClassName("editing");
-	}
+	 
 
 	public void languageHandler() {
 

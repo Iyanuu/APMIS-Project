@@ -128,6 +128,7 @@ public final class RetroProvider {
 	private CampaignFormMetaRegionFacadeRetro campaignFormMetaRegionFacadeRetro;
 
 	private CampaignFormDataFacadeRetro campaignFormDataFacadeRetro;
+	private DocumentFacadeRetro documentFacadeRetro;
 	private FeatureConfigurationFacadeRetro featureConfigurationFacadeRetro;
 	private AggregateReportFacadeRetro aggregateReportFacadeRetro;
 	private DeviceInfoFacadeRetro deviceInfoFacadeRetro;
@@ -1062,6 +1063,19 @@ System.out.println(isConnected() + "connecting +++++++++"+connecting);
 			}
 		}
 		return instance.campaignFormDataFacadeRetro;
+	}
+
+	public static DocumentFacadeRetro getDocumentFacade() throws NoConnectionException {
+		if (instance == null)
+			throw new NoConnectionException();
+		if (instance.documentFacadeRetro == null) {
+			synchronized ((RetroProvider.class)) {
+				if (instance.documentFacadeRetro == null) {
+					instance.documentFacadeRetro = instance.retrofit.create(DocumentFacadeRetro.class);
+				}
+			}
+		}
+		return instance.documentFacadeRetro;
 	}
 
 	public static AggregateReportFacadeRetro getAggregateReportFacade() throws NoConnectionException {

@@ -96,7 +96,7 @@ public final class ConfigProvider {
 
  
 	public static String APPVERSIONNUMBER = "1.0.44";
-	public static String APPRELEASEDATE = "24 JUNE, 2026";
+	public static String APPRELEASEDATE = "05 AUGUST, 2026";
 
 
 	private static final String FULL_COUNTRY_LOCALE_PATTERN = "[a-zA-Z]*-[a-zA-Z]*";

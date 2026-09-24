@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "notes": [
+    "Rules are currently encoded in core.py for MVP speed.",
+    "This file is reserved for future externalized rule packs."
+  ]
+}

@@ -37,6 +37,7 @@ import de.symeda.sormas.api.campaign.data.CampaignFormDataDto;
 import de.symeda.sormas.api.campaign.data.CampaignFormDataIndexDto;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaDto;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaExpiryDto;
+import de.symeda.sormas.api.campaign.form.CampaignFormMetaGeographyLevel;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaReferenceDto;
 import de.symeda.sormas.api.i18n.Captions;
 import de.symeda.sormas.api.i18n.Descriptions;
@@ -85,7 +86,7 @@ public class CampaignFormDataEditForm extends HorizontalLayout {
 
 	public CampaignFormDataEditForm(CampaignFormMetaReferenceDto campaignFormMetaReferenceDto,
 			CampaignReferenceDto campaignReferenceDto, boolean openData, String uuidForm,
-			Grid<CampaignFormDataIndexDto> grid, boolean campaignFormMetaDtox, CampaignDto campaignDto, CampaignFormMetaExpiryDto expiryDto, List<PopulationDataDto> popDto) {
+			Grid<CampaignFormDataIndexDto> grid, CampaignFormMetaGeographyLevel campaignFormMetaDtox, CampaignDto campaignDto, CampaignFormMetaExpiryDto expiryDto, List<PopulationDataDto> popDto) {
 		
 		System.out.println(campaignReferenceDto.getStartDate() + "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
 
@@ -112,17 +113,25 @@ public class CampaignFormDataEditForm extends HorizontalLayout {
 					campaignFormMetaDtox, campaignDto, expiryDto, popDto);
 		}
 
-		System.out.print(campaignFormMetaDto.isDistrictentry() + "district daa entry uuuuuuuuuuuuuuuuuu");
 
-		if (campaignFormMetaDto.isDistrictentry()) {
-
-			campaignFormBuilder.cbCommunity.setVisible(false);
-//			campaignFormBuilder.checkDistrictEntry = true;
-
-		} else {
+		
+		if (campaignFormMetaDto.getGeographyLevel().equals(CampaignFormMetaGeographyLevel.CLUSTER)) {
 			campaignFormBuilder.cbCommunity.setVisible(true);
-//			campaignFormBuilder.checkDistrictEntry = true;
+
+		}else {
+			if (campaignFormMetaDto.getGeographyLevel().equals(CampaignFormMetaGeographyLevel.REGION)) {
+				campaignFormBuilder.cbRegion.setVisible(false);
+				campaignFormBuilder.cbDistrict.setVisible(false);
+				campaignFormBuilder.cbCommunity.setVisible(false);
+			}else if (campaignFormMetaDto.getGeographyLevel().equals(CampaignFormMetaGeographyLevel.PROVINCE)) {
+				campaignFormBuilder.cbDistrict.setVisible(false);
+				campaignFormBuilder.cbCommunity.setVisible(false);
+			}else if (campaignFormMetaDto.getGeographyLevel().equals(CampaignFormMetaGeographyLevel.DISTRICT)) {
+				campaignFormBuilder.cbCommunity.setVisible(false);
+			}
 		}
+
+		
 
 		dialog = new Dialog();
 		dialog.add(campaignFormBuilder);

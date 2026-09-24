@@ -111,7 +111,7 @@ KEYCLOAK_DB_VENDOR=postgres
 KEYCLOAK_ADMIN_USER=admin
 KEYCLOAK_ADMIN_PASSWORD=password
 
-KEYCLOAK_SORMAS_UI_SECRET=changeit
+KEYCLOAK_APMIS_FLOW_SECRET=changeit
 KEYCLOAK_SORMAS_REST_SECRET=changeit
 KEYCLOAK_SORMAS_BACKEND_SECRET=changeit
 
@@ -160,7 +160,7 @@ KEYCLOAK_DOCKER_CMD+="-e DB_USER=${KEYCLOAK_DB_USER} "
 KEYCLOAK_DOCKER_CMD+="-e DB_PASSWORD=${KEYCLOAK_DB_PASSWORD} "
 KEYCLOAK_DOCKER_CMD+="-e PROXY_ADDRESS_FORWARDING=true "
 KEYCLOAK_DOCKER_CMD+="-e SORMAS_SERVER_URL=${SORMAS_SERVER_URL} "
-KEYCLOAK_DOCKER_CMD+="-e KEYCLOAK_SORMAS_UI_SECRET=${KEYCLOAK_SORMAS_UI_SECRET} "
+KEYCLOAK_DOCKER_CMD+="-e KEYCLOAK_APMIS_FLOW_SECRET=${KEYCLOAK_APMIS_FLOW_SECRET} "
 KEYCLOAK_DOCKER_CMD+="-e KEYCLOAK_SORMAS_REST_SECRET=${KEYCLOAK_SORMAS_REST_SECRET} "
 KEYCLOAK_DOCKER_CMD+="-e KEYCLOAK_SORMAS_BACKEND_SECRET=${KEYCLOAK_SORMAS_BACKEND_SECRET} "
 KEYCLOAK_DOCKER_CMD+="-p ${KEYCLOAK_PORT}:8080 "
@@ -171,8 +171,8 @@ docker run -d --name sormas_keycloak ${KEYCLOAK_DOCKER_CMD}
 
 echo "Updating Payara with Keycloak configurations"
 
-${ASADMIN} set-config-property --propertyName=payara.security.openid.clientSecret --propertyValue=${KEYCLOAK_SORMAS_UI_SECRET} --source=domain
-${ASADMIN} set-config-property --propertyName=payara.security.openid.clientId --propertyValue=sormas-ui --source=domain
+${ASADMIN} set-config-property --propertyName=payara.security.openid.clientSecret --propertyValue=${KEYCLOAK_APMIS_FLOW_SECRET} --source=domain
+${ASADMIN} set-config-property --propertyName=payara.security.openid.clientId --propertyValue=apmis-flow --source=domain
 ${ASADMIN} set-config-property --propertyName=payara.security.openid.scope --propertyValue=openid --source=domain
 ${ASADMIN} set-config-property --propertyName=payara.security.openid.providerURI --propertyValue=http://localhost:${KEYCLOAK_PORT}/keycloak/auth/realms/SORMAS --source=domain
 ${ASADMIN} set-config-property --propertyName=sormas.rest.security.oidc.json --propertyValue="{\"realm\":\"SORMAS\",\"auth-server-url\":\"http://localhost:${KEYCLOAK_PORT}/keycloak/auth\",\"ssl-required\":\"external\",\"resource\":\"sormas-rest\",\"credentials\":{\"secret\":\"${KEYCLOAK_SORMAS_REST_SECRET}\"},\"confidential-port\":0,\"principal-attribute\":\"preferred_username\",\"enable-basic-auth\":true}" --source=domain

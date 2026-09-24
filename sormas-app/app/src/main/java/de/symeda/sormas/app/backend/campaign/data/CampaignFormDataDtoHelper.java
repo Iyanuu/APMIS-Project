@@ -56,7 +56,6 @@ public class CampaignFormDataDtoHelper extends AdoDtoHelper<CampaignFormData, Ca
 
 	@Override
 	protected Call<List<PushResult>> pushAll(List<CampaignFormDataDto> campaignFormMetaDtos) throws NoConnectionException {
-
 		return RetroProvider.getCampaignFormDataFacade().pushAll(campaignFormMetaDtos);
 	}
 
@@ -66,7 +65,7 @@ public class CampaignFormDataDtoHelper extends AdoDtoHelper<CampaignFormData, Ca
 		target.setFormDate(source.getFormDate());
 		target.setCampaign(DatabaseHelper.getCampaignDao().getByReferenceDto(source.getCampaign()));
 		target.setCampaignFormMeta(DatabaseHelper.getCampaignFormMetaDao().getByReferenceDto(source.getCampaignFormMeta()));
-	//Adding Area Patch
+		//Adding Area Patch
 		target.setArea(DatabaseHelper.getAreaDao().getByReferenceDto(source.getArea()));
 		target.setRegion(DatabaseHelper.getRegionDao().getByReferenceDto(source.getRegion()));
 		target.setDistrict(DatabaseHelper.getDistrictDao().getByReferenceDto(source.getDistrict()));

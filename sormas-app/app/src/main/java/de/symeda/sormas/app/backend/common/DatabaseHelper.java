@@ -98,8 +98,11 @@ import de.symeda.sormas.app.backend.device.errorLog.DeviceErrorLog;
 import de.symeda.sormas.app.backend.device.errorLog.DeviceErrorLogDao;
 import de.symeda.sormas.app.backend.device.info.DeviceInfo;
 import de.symeda.sormas.app.backend.device.info.DeviceInfoDao;
+import de.symeda.sormas.app.backend.document.Document;
+import de.symeda.sormas.app.backend.document.DocumentDao;
 import de.symeda.sormas.app.backend.disease.DiseaseConfiguration;
 import de.symeda.sormas.app.backend.disease.DiseaseConfigurationDao;
+import de.symeda.sormas.app.backend.document.Document;
 import de.symeda.sormas.app.backend.epidata.EpiData;
 import de.symeda.sormas.app.backend.epidata.EpiDataDao;
 import de.symeda.sormas.app.backend.event.Event;
@@ -195,7 +198,7 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 	// any time you make changes to your database objects, you may have to increase the database version
 
 
-	public static final int DATABASE_VERSION = 358;
+	public static final int DATABASE_VERSION = 359;
 
 	private static DatabaseHelper instance = null;
 
@@ -497,6 +500,7 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 			TableUtils.createTable(connectionSource, LbdsSync.class);
 			TableUtils.createTable(connectionSource, DeviceInfo.class);
 			TableUtils.createTable(connectionSource, DeviceErrorLog.class);
+			TableUtils.createTable(connectionSource, Document.class);
 
 			updatePatchForTriggers();
 		} catch (SQLException e) {
@@ -3494,9 +3498,28 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 
 					getDao(DeviceInfo.class).executeRaw("ALTER TABLE campaignformdata add column ispublished boolean default false;");
 
+//				case 358:
+//
+//					currentVersion = 358;
+//					getDao(CampaignFormMeta.class).executeRaw(
+//							"ALTER TABLE campaignFormMeta ADD COLUMN geographylevel TEXT"
+//					);
+//
+//					getDao(CampaignFormMeta.class).executeRaw(
+//							"UPDATE campaignFormMeta " +
+//									"SET geographylevel = CASE " +
+//									"WHEN districtentry = 1 THEN 'DISTRICT' " +
+//									"WHEN districtentry = 0 THEN 'CLUSTER' " +
+//									"END"
+//					);
+//
+//					getDao(CampaignFormMeta.class).executeRaw(
+//							"ALTER TABLE campaignFormMeta DROP COLUMN districtentry"
+//					);
 
-
-
+				case 358:
+					currentVersion = 358;
+					TableUtils.createTableIfNotExists(connectionSource, Document.class);
 					break;
 
 				default:
@@ -4258,6 +4281,8 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 					dao = (AbstractAdoDao<ADO>) new DeviceInfoDao((Dao<DeviceInfo, Long>) innerDao);
 				}else if (type.equals(DeviceErrorLog.class)) {
 					dao = (AbstractAdoDao<ADO>) new DeviceErrorLogDao((Dao<DeviceErrorLog, Long>) innerDao);
+				}else if (type.equals(Document.class)) {
+					dao = (AbstractAdoDao<ADO>) new DocumentDao((Dao<Document, Long>) innerDao);
 				}
 				else {
 					throw new UnsupportedOperationException(type.toString());
@@ -4556,6 +4581,10 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 
 	public static DeviceErrorLogDao getDeviceErrorLogDao() {
 		return (DeviceErrorLogDao) getAdoDao(DeviceErrorLog.class);
+	}
+
+	public static DocumentDao getDocumentDao() {
+		return (DocumentDao) getAdoDao(Document.class);
 	}
 
 	/**

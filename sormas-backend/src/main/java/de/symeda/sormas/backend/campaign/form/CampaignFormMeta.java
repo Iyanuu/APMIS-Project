@@ -29,6 +29,7 @@ import de.symeda.auditlog.api.Audited;
 import de.symeda.auditlog.api.AuditedIgnore;
 import de.symeda.sormas.api.Modality;
 import de.symeda.sormas.api.campaign.form.CampaignFormElement;
+import de.symeda.sormas.api.campaign.form.CampaignFormMetaGeographyLevel;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaReferenceDto;
 import de.symeda.sormas.api.campaign.form.CampaignFormTranslations;
 import de.symeda.sormas.api.user.FormAccess;
@@ -49,7 +50,6 @@ public class CampaignFormMeta extends AbstractDomainObject {
 
 	public static final String FORM_ID = "formId";
 	public static final String FORM_TYPE = "formType";
-	public static final String DISTRICTENTRY = "districtentry";
 	public static final String LANGUAGE_CODE = "languageCode";
 	public static final String FORM_NAME = "formName"; 
 	public static final String FORM_CATEGORY = "formCategory";
@@ -63,11 +63,13 @@ public class CampaignFormMeta extends AbstractDomainObject {
 	public static final String FORMGROUPUUID = "formGroupUuid";
 	public static final String FORMVERSION = "formversion";
 	public static final String AREA = "area";
+	public static final String GEOGRAPHYLEVEL = "geographyLevel";
+
 
 	private String formId;
 	private String formType;
 
-	private boolean districtentry = false;
+	private CampaignFormMetaGeographyLevel geographyLevel;
 	
 	private FormAccess formCategory;
 	private int daysExpired;
@@ -129,14 +131,27 @@ public class CampaignFormMeta extends AbstractDomainObject {
 	public void setFormCategory(FormAccess formCategory) {
 		this.formCategory = formCategory;
 	}
-
+	
 	@Column
 	public int getDaysExpired() {
 		return daysExpired;
 	}
 
+
+
 	public void setDaysExpired(int daysExpired) {
 		this.daysExpired = daysExpired;
+	}
+	
+	
+	@Enumerated(EnumType.STRING)
+	@Column
+	public CampaignFormMetaGeographyLevel getGeographyLevel() {
+		return geographyLevel;
+	}
+
+	public void setGeographyLevel(CampaignFormMetaGeographyLevel geographylevel) {
+		this.geographyLevel = geographylevel;
 	}
 	
 	@Column
@@ -247,14 +262,6 @@ public class CampaignFormMeta extends AbstractDomainObject {
 //		campaignFormTranslationsList = null;
 	}
 
-	@Column
-	public boolean isDistrictentry() {
-		return districtentry;
-	}
-
-	public void setDistrictentry(boolean districtentry) {
-		this.districtentry = districtentry;
-	}
 	
 	public String getModality() {
 		return modality;

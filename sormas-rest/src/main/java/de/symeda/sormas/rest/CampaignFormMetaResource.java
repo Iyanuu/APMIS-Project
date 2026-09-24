@@ -18,6 +18,7 @@ import javax.ws.rs.core.MediaType;
 import de.symeda.sormas.api.FacadeProvider;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaDto;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaExpiryDto;
+import de.symeda.sormas.api.campaign.form.CampaignFormMetaGeographyLevel;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaHistoryExtractDto;
 import de.symeda.sormas.api.infrastructure.district.DistrictReferenceDto;
 
@@ -39,13 +40,13 @@ public class CampaignFormMetaResource extends EntityDtoResource {
 //			System.out.println("+++++++++++++++++++++++form size"+FacadeProvider.getCampaignFormMetaFacade().getAllAfter(new Date(since)).stream()
 //					.filter(e -> e.isDistrictentry() == true).collect(Collectors.toList()).size());
 			return FacadeProvider.getCampaignFormMetaFacade().getAllAfter(new Date(since)).stream()
-					.filter(e -> e.isDistrictentry() == true).collect(Collectors.toList());
+					.filter(e -> e.getGeographyLevel().equals(CampaignFormMetaGeographyLevel.DISTRICT)).collect(Collectors.toList());
 			
 		} else {
 //			System.out.println("+++++++++++++++++++++++form size"+FacadeProvider.getCampaignFormMetaFacade().getAllAfter(new Date(since)).stream()
 //					.filter(e -> e.isDistrictentry() != true).collect(Collectors.toList()).size());
 			return FacadeProvider.getCampaignFormMetaFacade().getAllAfter(new Date(since)).stream()
-					.filter(e -> e.isDistrictentry() != true).collect(Collectors.toList());
+					.filter(e -> !e.getGeographyLevel().equals(CampaignFormMetaGeographyLevel.DISTRICT)).collect(Collectors.toList());
 		}
 	}
 
@@ -63,7 +64,7 @@ public class CampaignFormMetaResource extends EntityDtoResource {
 		
 		if(rdto != null && rdto.size() > 0) {
 			List<CampaignFormMetaDto> listArra = FacadeProvider.getCampaignFormMetaFacade().getAllAfter(new Date(0)).stream()
-					.filter(e -> e.isDistrictentry() == true).collect(Collectors.toList());
+					.filter(e -> e.getGeographyLevel().equals(CampaignFormMetaGeographyLevel.DISTRICT)).collect(Collectors.toList());
 			List<String> finalList = new ArrayList<>();
 //			System.out.println("+++++++++++++++++++++++form size"+listArra.size());
 			for(CampaignFormMetaDto lsc : listArra ) {
@@ -73,7 +74,7 @@ public class CampaignFormMetaResource extends EntityDtoResource {
 			
 		} else {
 			List<CampaignFormMetaDto> listArra = FacadeProvider.getCampaignFormMetaFacade().getAllAfter(new Date(0)).stream()
-					.filter(e -> e.isDistrictentry() != true).collect(Collectors.toList());
+					.filter(e -> !e.getGeographyLevel().equals(CampaignFormMetaGeographyLevel.DISTRICT)).collect(Collectors.toList());
 			List<String> finalList = new ArrayList<>();
 			for(CampaignFormMetaDto lsc : listArra ) {
 				finalList.add(lsc.getUuid());

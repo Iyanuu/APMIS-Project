@@ -17,8 +17,10 @@ package de.symeda.sormas.app.campaign;
 
 import static de.symeda.sormas.api.campaign.ExpressionProcessorUtils.refreshEvaluationContext;
 import static de.symeda.sormas.api.utils.FieldConstraints.CHARACTER_LIMIT_DEFAULT;
+import static de.symeda.sormas.app.BR.callback;
 
 import android.content.Context;
+import android.content.Intent;
 import android.text.InputType;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -28,6 +30,8 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.fragment.app.FragmentManager;
 
 import org.springframework.expression.EvaluationContext;
@@ -59,10 +63,12 @@ import de.symeda.sormas.api.i18n.I18nProperties;
 import de.symeda.sormas.api.utils.YesNoUnknown;
 import de.symeda.sormas.app.R;
 import de.symeda.sormas.app.backend.campaign.form.CampaignFormMeta;
+import de.symeda.sormas.app.component.controls.ControlCameraImageField;
 import de.symeda.sormas.app.component.controls.ControlCheckBoxField;
 import de.symeda.sormas.app.component.controls.ControlCheckBoxGroupField;
 import de.symeda.sormas.app.component.controls.ControlDateField;
 import de.symeda.sormas.app.component.controls.ControlDecimalEditField;
+import de.symeda.sormas.app.component.controls.ControlImageEditField;
 import de.symeda.sormas.app.component.controls.ControlPhoneField;
 import de.symeda.sormas.app.component.controls.ControlPropertyField;
 import de.symeda.sormas.app.component.controls.ControlSpinnerField;
@@ -84,6 +90,8 @@ public class CampaignFormDataFragmentUtils {
 
     private static final Set<String> KEYWORDS = Set.of("true", "false", "null", "AND", "OR", "NOT");
 
+
+    private ActivityResultLauncher<Intent> cameraLauncher;
     private CampaignFormDataFragmentUtils() {
     }
 
@@ -364,41 +372,41 @@ public class CampaignFormDataFragmentUtils {
                                 System.out.println("Expression Value is null =================");
 
                                 String valudex = null;
-                            try {
-                                double num = Double.parseDouble(valuex);
-                                if (num != 0) {
-                                    // If it's a whole number (like 15.0), convert to integer string
-                                    if (num == Math.floor(num)) {
-                                        valudex = String.valueOf((int) num);
+                                try {
+                                    double num = Double.parseDouble(valuex);
+                                    if (num != 0) {
+                                        // If it's a whole number (like 15.0), convert to integer string
+                                        if (num == Math.floor(num)) {
+                                            valudex = String.valueOf((int) num);
+                                        } else {
+                                            // If it's a decimal, format to 2 decimal places
+                                            valudex = String.format("%.2f", num);
+                                        }
                                     } else {
-                                        // If it's a decimal, format to 2 decimal places
-                                        valudex = String.format("%.2f", num);
+                                        valudex = String.valueOf((int) num); // Whole number
+
+                                    }
+                                    // If num == 0, valudex stays null
+                                } catch (NumberFormatException e) {
+                                    valudex = valuex;
+                                }
+
+                                if (orginalValue != null) {
+                                    System.out.println("orginalValue Value is not null =================expressionnul");
+
+                                    if (!orginalValue.toString().equals(valudex)) {
+                                        if (!(orginalValue.toString().isEmpty() && valudex == null)) {
+                                            ControlTextEditField.setValue((ControlTextEditField) dynamicField, valudex);
+                                        }
                                     }
                                 } else {
-                                    valudex = String.valueOf((int) num); // Whole number
+                                    System.out.println("orginalValue Value is null =================expressionnul");
 
-                                }
-                                // If num == 0, valudex stays null
-                            } catch (NumberFormatException e) {
-                                valudex = valuex;
-                            }
-
-                            if (orginalValue != null) {
-                                System.out.println("orginalValue Value is not null =================expressionnul");
-
-                                if (!orginalValue.toString().equals(valudex)) {
-                                    if (!(orginalValue.toString().isEmpty() && valudex == null)) {
+                                    if (valudex != null) {
                                         ControlTextEditField.setValue((ControlTextEditField) dynamicField, valudex);
                                     }
                                 }
-                            } else {
-                                System.out.println("orginalValue Value is null =================expressionnul");
-
-                                if (valudex != null) {
-                                    ControlTextEditField.setValue((ControlTextEditField) dynamicField, valudex);
-                                }
                             }
-                        }
                         } else if (expressionValue.getClass().isAssignableFrom(Boolean.class)) {
                             ControlTextEditField.setValue((ControlTextEditField) dynamicField, (Double) (!Double.isFinite((double) expressionValue) ? 0 : expressionValue.toString().endsWith(".0") ? expressionValue.toString().replace(".0", "") : df.format((double) expressionValue)));
                         } else {
@@ -413,6 +421,8 @@ public class CampaignFormDataFragmentUtils {
             }
         } catch (SpelEvaluationException e) {
             Log.e("Error evaluating expression on field : " + dynamicField.getCaption(), e.getMessage());
+        }catch (Exception ex){
+            Log.e("Error evaluating expressionyyyyy on field : " + dynamicField.getCaption(), ex.getMessage());
         }
         if (type == CampaignFormElementType.RANGE || type == CampaignFormElementType.DECIMAL) {
             dynamicField.setEnabled(true);
@@ -534,6 +544,8 @@ public class CampaignFormDataFragmentUtils {
             }
         } catch (SpelEvaluationException e) {
             Log.e("Error evaluating expression on field2 : " + dynamicField.getCaption(), e.getMessage());
+        }catch (Exception ex){
+            Log.e("Error evaluating expressionxxxxx on field2 : " + dynamicField.getCaption(), ex.getMessage());
         }
         if (type == CampaignFormElementType.RANGE || type == CampaignFormElementType.DECIMAL) {
             dynamicField.setEnabled(true);
@@ -571,8 +583,11 @@ public class CampaignFormDataFragmentUtils {
 
     public static Object getExpressionValue(ExpressionParser expressionParser, List<CampaignFormDataEntry> formValues, String rawExpressionString) {
         System.out.println("111111111 getExpressionValue" + rawExpressionString);
-        final String processedExpressionZeroString = getExpressionZeroToFalse(rawExpressionString);
-        String cleanedexpressionString = processedExpressionZeroString;
+//        final String processedExpressionZeroString = getExpressionZeroToFalse(rawExpressionString);
+//        String cleanedexpressionString = processedExpressionZeroString;
+
+//        final String processedExpressionZeroString = getExpressionZeroToFalse(rawExpressionString);
+        String cleanedexpressionString = rawExpressionString;
 
         System.out.println("22222222222222 getExpressionValue" + cleanedexpressionString);
 
@@ -1325,69 +1340,69 @@ public class CampaignFormDataFragmentUtils {
     }
 
 
-    public static ControlTextEditField createControlTextEditFieldRange(
-            CampaignFormElement campaignFormElement,
-            Context context,
-            Map<String, String> userTranslations,
-            Boolean isIntegerField,
-            Boolean isRequired,
-            Integer minVal,
-            Integer maxVal,
-            Boolean isExpression,
-            Boolean warnOnError) {
-
-        System.out.println(context + " --------------------- running range stage 1 : " + isExpression);
-        final boolean isExpressionx = isExpression;
-        return new ControlTextEditField(context) {
-
-
-            @Override
-            protected String getPrefixDescription() {
-                return getUserLanguageCaption(userTranslations, campaignFormElement);
-            }
-
-            @Override
-            protected String getPrefixCaption() {
-                return getUserLanguageCaption(userTranslations, campaignFormElement);
-            }
-
-            @Override
-            public int getTextAlignment() {
-                return View.TEXT_ALIGNMENT_VIEW_START;
-            }
-
-            @Override
-            public int getGravity() {
-                return Gravity.CENTER_VERTICAL;
-            }
-
-            @Override
-            public int getMaxLines() {
-                return 1;
-            }
-
-            @Override
-            public int getMaxLength() {
-                return 8;
-            }
-
-            @Override
-            public int getMinLength() {
-                return 1;
-            }
-
-            //
-            @Override
-            protected void inflateView(Context context, AttributeSet attrs, int defStyle) {
-                super.inflateView(context, attrs, defStyle);
-                initLabel();
-                initLabelAndValidationListeners();
-                setLiveValidationDisabled(true);
-                initInput(isIntegerField, isRequired, true, minVal, maxVal, isExpressionx, warnOnError);
-                displayHelpText();
-            }
-        };
-    }
+//    public static ControlTextEditField createControlTextEditFieldRange(
+//            CampaignFormElement campaignFormElement,
+//            Context context,
+//            Map<String, String> userTranslations,
+//            Boolean isIntegerField,
+//            Boolean isRequired,
+//            Integer minVal,
+//            Integer maxVal,
+//            Boolean isExpression,
+//            Boolean warnOnError) {
+//
+//        System.out.println(context + " --------------------- running range stage 1 : " + isExpression);
+//        final boolean isExpressionx = isExpression;
+//        return new ControlTextEditField(context) {
+//
+//
+//            @Override
+//            protected String getPrefixDescription() {
+//                return getUserLanguageCaption(userTranslations, campaignFormElement);
+//            }
+//
+//            @Override
+//            protected String getPrefixCaption() {
+//                return getUserLanguageCaption(userTranslations, campaignFormElement);
+//            }
+//
+//            @Override
+//            public int getTextAlignment() {
+//                return View.TEXT_ALIGNMENT_VIEW_START;
+//            }
+//
+//            @Override
+//            public int getGravity() {
+//                return Gravity.CENTER_VERTICAL;
+//            }
+//
+//            @Override
+//            public int getMaxLines() {
+//                return 1;
+//            }
+//
+//            @Override
+//            public int getMaxLength() {
+//                return 8;
+//            }
+//
+//            @Override
+//            public int getMinLength() {
+//                return 1;
+//            }
+//
+//            //
+//            @Override
+//            protected void inflateView(Context context, AttributeSet attrs, int defStyle) {
+//                super.inflateView(context, attrs, defStyle);
+//                initLabel();
+//                initLabelAndValidationListeners();
+//                setLiveValidationDisabled(true);
+//                initInput(isIntegerField, isRequired, true, minVal, maxVal, isExpressionx, warnOnError);
+//                displayHelpText();
+//            }
+//        };
+//    }
 
 
     public static ControlTextEditFieldRange createControlTextEditFieldRangexOnlyExpression(
@@ -1649,6 +1664,74 @@ public class CampaignFormDataFragmentUtils {
                 if (isRequired) {
                     setRequired(true);
                 }
+            }
+        };
+    }
+
+
+    public static ControlImageEditField createControlImageEditField(
+            CampaignFormElement campaignFormElement,
+            Context context,
+            Map<String, String> userTranslations,
+            Map<String, String> userHints,
+            boolean isRequired,
+            ActivityResultLauncher<Intent> launcher,
+            ActivityResultLauncher<String> permissionLauncher) {
+
+        return new ControlImageEditField(context) {
+            @Override
+            protected String getPrefixDescription() {
+                return getUserLanguageCaption(userTranslations, campaignFormElement);
+            }
+
+            @Override
+            protected String getPrefixCaption() {
+                return getUserLanguageCaption(userTranslations, campaignFormElement);
+            }
+
+            @Override
+            protected String getHelpText() {
+                return getUserLanguageHint(userHints, campaignFormElement);
+            }
+
+            @Override
+            protected void inflateView(Context context, AttributeSet attrs, int defStyle) {
+                super.inflateView(context, attrs, defStyle);
+                initLabel();
+                initLabelAndValidationListeners();
+                setLiveValidationDisabled(true);
+                configureForImageCapture(campaignFormElement, launcher, permissionLauncher);
+                displayHelpText();
+                if (isRequired) {
+                    setRequired(true);
+                }
+            }
+        };
+    }
+
+    public static ControlImageEditField createControlImageReadField(
+            CampaignFormElement campaignFormElement,
+            Context context,
+            Map<String, String> userTranslations) {
+
+        return new ControlImageEditField(context) {
+            @Override
+            protected String getPrefixDescription() {
+                return getUserLanguageCaption(userTranslations, campaignFormElement);
+            }
+
+            @Override
+            protected String getPrefixCaption() {
+                return getUserLanguageCaption(userTranslations, campaignFormElement);
+            }
+
+            @Override
+            protected void inflateView(Context context, AttributeSet attrs, int defStyle) {
+                super.inflateView(context, attrs, defStyle);
+                initLabel();
+                initLabelAndValidationListeners();
+                setLiveValidationDisabled(true);
+                setReadOnly(true);
             }
         };
     }
@@ -1948,7 +2031,7 @@ public class CampaignFormDataFragmentUtils {
 //                    }
 //
 //                    System.out.println("DEBUG - Setting options with selected keys: " + finalSelectedKeys);
-////                    setOptionsAndValue(optionValues, finalSelectedKeys);
+    ////                    setOptionsAndValue(optionValues, finalSelectedKeys);
 //
 //                }
 //            }

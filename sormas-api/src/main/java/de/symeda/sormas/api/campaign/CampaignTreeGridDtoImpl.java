@@ -11,7 +11,9 @@ import java.io.Serializable;
 	private Long populationData;
 	private Long populationData5_10;
 	private Long populationData4_23M;
+	private Long populationData4_59M;
 	private Long populationDataTotal;
+	
 	private String savedSelectionData;
 	
 	public CampaignTreeGridDtoImpl(String name, Long populationData, Long id, String parentUuid, String uuid, String levelAssessed, String savedSelectionData) {
@@ -65,6 +67,15 @@ import java.io.Serializable;
         this.populationData4_23M = populationData4_23M;
         this.populationDataTotal = populationData + populationData5_10;
     }
+	
+	public CampaignTreeGridDtoImpl(String name, Long populationData, Long populationData5_10, Long populationData4_23M, Long populationData4_59M, Long id, String parentUuid, String uuid, String levelAssessed, boolean isSelected, String districtModality, String districtStatus, String floatStatus, Long populationDataTotal) {
+        super(name, id, parentUuid, uuid, levelAssessed, isSelected, districtModality, districtStatus, floatStatus);
+        this.populationData = populationData;
+        this.populationData5_10 = populationData5_10;
+        this.populationData4_23M = populationData4_23M;
+        this.populationData4_59M = populationData4_59M;
+        this.populationDataTotal = populationData + populationData5_10 + populationData4_23M + populationData4_59M;
+    }
 
 	
 	
@@ -81,6 +92,11 @@ import java.io.Serializable;
 	 @Override
      public Long getPopulationData4_23M() {
          return populationData4_23M;
+     }
+	 
+	 @Override
+     public Long getPopulationData4_59M() {
+         return populationData4_59M;
      }
 	 
 	 public Long getPopulationDataTotal() {
@@ -102,6 +118,10 @@ import java.io.Serializable;
 
 	 public void setPopulationData4_23M(Long populationData4_23M) {
 		 this.populationData4_23M = populationData4_23M;
+	 }
+	 
+	 public void setPopulationData4_59M(Long populationData4_59M) {
+		 this.populationData4_59M = populationData4_59M;
 	 }
 
 	 public void setPopulationDataTotal(Long populationDataTotal) {

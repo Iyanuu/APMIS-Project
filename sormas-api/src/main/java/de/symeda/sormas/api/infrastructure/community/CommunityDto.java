@@ -57,6 +57,8 @@ public class CommunityDto extends EntityDto {
 	public static final String POPULATIONDATA_0_4 = "populationdata_0_4";
 	public static final String POPULATIONDATA_5_10 = "populationdata_5_10";
 	public static final String POPULATIONDATA_4_23M = "populationdata_4_23M";
+	public static final String POPULATIONDATA_4_59M = "populationdata_4_59M";
+
 	public static final String MODALITY = "modality";
 	public static final String STATUS = "status";
 
@@ -84,6 +86,8 @@ public class CommunityDto extends EntityDto {
 	private Long populationData;
 	private Long populationData5_10;
 	private Long populationData4_23M;
+	private Long populationData4_59M;
+
 	private String selectedPopulationData;
 	private String districtModality;
 	private String districtStatus;
@@ -282,6 +286,23 @@ public class CommunityDto extends EntityDto {
 	};
 	
 	
+	public CommunityDto(String name, Long populationData, Long populationData5_10, Long populationData4_23M, Long populationData4_59M, Long clusterId,String regionUuid, String districtUuid, String clusterUuid,  boolean selectedForPopulationData, String districtModality, String districtStatus, String floating) {
+		this.name = name;
+		this.populationData = populationData;
+		this.populationData5_10 = populationData5_10;
+		this.populationData4_23M = populationData4_23M;
+		this.populationData4_59M = populationData4_59M;
+		this.clusterId = clusterId;
+		this.regionUuid = regionUuid;
+		this.districtUuid = districtUuid;
+		this.clusterUuid = clusterUuid;
+		this.selectedForPopulationData = selectedForPopulationData;
+		this.districtModality = districtModality;
+		this.districtStatus = districtStatus;
+		this.floating = floating; 
+
+	};
+	
 
 	public CommunityDto() {
 		super();
@@ -474,8 +495,19 @@ public class CommunityDto extends EntityDto {
 		return populationData4_23M;
 	}
 
+	public void setPopulationData4_23M(Long populationData4_23M) {
+		this.populationData4_23M = populationData4_23M;
+	}	
 
-	
+	public Long getPopulationData4_59M() {
+		return populationData4_59M;
+	}
+
+
+	public void setPopulationData4_59M(Long populationData4_59M) {
+		this.populationData4_59M = populationData4_59M;
+	}
+
 
 	public boolean isSelectedForPopulationData() {
 		return selectedForPopulationData;
@@ -487,10 +519,6 @@ public class CommunityDto extends EntityDto {
 			this.selectedForPopulationData = selectedForPopulationData;
 	}
 
-
-	public void setPopulationData4_23M(Long populationData4_23M) {
-		this.populationData4_23M = populationData4_23M;
-	}
 
 	public String getSelectedPopulationData() {
 		return selectedPopulationData;

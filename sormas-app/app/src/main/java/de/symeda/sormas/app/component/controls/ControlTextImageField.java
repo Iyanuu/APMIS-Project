@@ -268,4 +268,9 @@ public class ControlTextImageField extends ControlTextReadField {
 		}
 		ControlTextReadField.setValue(textImageField, booleanValue, valueFormat, defaultValue);
 	}
+
+
+
+
+
 }

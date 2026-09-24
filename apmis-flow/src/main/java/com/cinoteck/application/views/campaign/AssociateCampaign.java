@@ -105,6 +105,7 @@ public class AssociateCampaign extends VerticalLayout {
 
 	ComboBox<String> districtModality = new ComboBox<String>("Modality");
 	ComboBox<String> districtStatus = new ComboBox<String>("Status");
+	IntegerField popDataAge4_59M = new IntegerField("Target 4_59M");
 	IntegerField popDataAge4_23M = new IntegerField("Target 4_23M");
 	IntegerField popDataAge5_10 = new IntegerField("Target 60-120M");
 	IntegerField popData0_4 = new IntegerField("Target 0-59M");
@@ -123,6 +124,13 @@ public class AssociateCampaign extends VerticalLayout {
 	private Set<String> pendingSelectedClusters = new HashSet<>();
 	private Set<String> pendingDeselectedClusters = new HashSet<>();
 	boolean hasPendingChanges = false;
+	private final Span selectedClusterCountLabel = new Span("Selected clusters: 0");
+
+	
+	private boolean hasUnsavedChanges = false;
+	private boolean suppressUnsavedTracking = false;
+	private Runnable onDirtyStateChanged;
+
 
 	private FooterRow footerRow;
 
@@ -143,10 +151,6 @@ public class AssociateCampaign extends VerticalLayout {
 	}
 	
 
-/**
- * Updates the district-level delete checkbox state based on its child clusters
- * This ensures the district checkbox reflects the state of ALL children
- */
 private void updateDistrictDeleteCheckboxState(CampaignTreeGridDto cluster) {
     if (cluster == null) return;
     
@@ -299,6 +303,24 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 			label.getStyle().set("color", "var(--lumo-body-text-color)");
 			return label;
 		});
+		
+		ComponentRenderer<Span, CampaignTreeGridDto> populationGenerate4_59M = new ComponentRenderer<>(input -> {
+			Locale locale;
+			String lang = userProvider.getUser().getLanguage().toString();
+			if ("Pashto".equals(lang)) {
+				locale = new Locale("ps");
+			} else if ("Dari".equals(lang)) {
+				locale = new Locale("fa");
+			} else {
+				locale = Locale.ENGLISH;
+			}
+			NumberFormat format = NumberFormat.getInstance(locale);
+			Number population = input.getPopulationData4_59M();
+			String value = population != null ? format.format(population) : "0";
+			Span label = new Span(value);
+			label.getStyle().set("color", "var(--lumo-body-text-color)");
+			return label;
+		});
 
 		// Enhanced checkbox renderer with pending change tracking
 		ComponentRenderer<Component, CampaignTreeGridDto> selectionCheckboxRenderer = new ComponentRenderer<>(dto -> {
@@ -311,9 +333,6 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 				isSelected = "true".equalsIgnoreCase(dto.getSavedData()) || dto.getSelected();
 			} else {
 				isSelected = hasSelectedClusterBelow(dto);
-//                isSelected = hasAnySelectedChildCluster(dto);
-
-//                isSelected = hasAnySelectedChild(dto);
 			}
 			checkbox.setValue(isSelected);
 
@@ -343,6 +362,7 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 					}
 
 					hasPendingChanges = true;
+					 markDirty();
 
 					// If a cluster was clicked, only walk upward
 					if ("cluster".equals(currentDto.getLevelAssessed())) {
@@ -406,9 +426,6 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		treeGrid.addHierarchyColumn(CampaignTreeGridDto::getName)
 				.setHeader(createHeaderWithTooltip(I18nProperties.getCaption(Captions.Location), I18nProperties.getCaption(Captions.Location))).setAutoWidth(true).setResizable(true)
 				.setTooltipGenerator(CampaignTreeGridDto::getName);
-//        treeGrid.addColumn(populationGenerate).setHeader("Target (0-59M)").setResizable(true).setTooltipGenerator(item->{"knknskf"});
-//        treeGrid.addColumn(populationGenerate5_10).setHeader("Target (60-120M)").setResizable(true);
-//        treeGrid.addColumn(populationGenerate4_23M).setHeader("Target (4_23M)").setResizable(true);
 
 		treeGrid.addColumn(populationGenerate).setHeader(createHeaderWithTooltip("Target (0-59M)", "Target (0-59M)")).setResizable(true)
 				.setTooltipGenerator(input -> {
@@ -451,6 +468,22 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 					Number population = input.getPopulationData4_23M();
 					return population != null ? format.format(population) : "0";
 				});
+		
+		treeGrid.addColumn(populationGenerate4_59M).setHeader(createHeaderWithTooltip("Target (4-59M)", "Target (4-59M)")).setResizable(true)
+		.setTooltipGenerator(input -> {
+			Locale locale;
+			String lang = userProvider.getUser().getLanguage().toString();
+			if ("Pashto".equals(lang)) {
+				locale = new Locale("ps");
+			} else if ("Dari".equals(lang)) {
+				locale = new Locale("fa");
+			} else {
+				locale = Locale.ENGLISH;
+			}
+			NumberFormat format = NumberFormat.getInstance(locale);
+			Number population = input.getPopulationData4_59M();
+			return population != null ? format.format(population) : "0";
+		});
 
 		treeGrid.addColumn(CampaignTreeGridDto::getDistrictModality).setHeader(createHeaderWithTooltip("Modality", "Modality")).setResizable(true)
 				.setTooltipGenerator(CampaignTreeGridDto::getDistrictModality);
@@ -474,25 +507,8 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		    boolean isDistrict = "district".equals(dto.getLevelAssessed());
 		    boolean isProvince = "province".equals(dto.getLevelAssessed());
 
-		    
-//		    if (isCluster || isDistrict || isProvince) {
 		    if (isCluster) {
 
-		        
-		        // Initialize checkbox state
-//		        if (isProvince) {
-//		            List<CampaignTreeGridDto> childDistricts = dto.getDistrictData();
-//		            boolean allSelected = !childDistricts.isEmpty() && 
-//		            		childDistricts.stream().allMatch(district -> deletelist.contains(district));
-//		            deleteCheckbox.setValue(allSelected);
-//		        } else if (isDistrict) {
-//		            // For districts: check if ALL child clusters are in deletelist
-//		            // (This gives a cleaner "select all" visual state)
-//		            List<CampaignTreeGridDto> childClusters = dto.getClusterData();
-//		            boolean allSelected = !childClusters.isEmpty() && 
-//		                childClusters.stream().allMatch(cluster -> deletelist.contains(cluster));
-//		            deleteCheckbox.setValue(allSelected);
-//		        } else {
 		        if (isCluster) {
 		        	// For clusters: check if in deletelist
 		            deleteCheckbox.setValue(deletelist.contains(dto));
@@ -505,28 +521,7 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		        	    return;
 		        	}
 		            boolean isSelected = event.getValue();
- 
-//		            if (isProvince) {
-//		                // District selected - select/deselect ALL child clusters
-//		                List<CampaignTreeGridDto> childDistricts = dto.getClusterData();
-//		                if (isSelected) {
-//		                    deletelist.addAll(childDistricts);
-//		                } else {
-//		                    deletelist.removeAll(childDistricts);
-//		                }
-//
-//		            }else if (isDistrict) {
-//		                // District selected - select/deselect ALL child clusters
-//		                List<CampaignTreeGridDto> childClusters = dto.getClusterData();
-//		                
-//		                
-//		                if (isSelected) {
-//		                    deletelist.addAll(childClusters);
-//		                } else {
-//		                    deletelist.removeAll(childClusters);
-//		                }
-//		                
-//		            } else {
+
 		            if (isCluster) { 
 		                // Cluster-level selection
 		                if (isSelected) {
@@ -615,8 +610,17 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 
 			showPendingChangesDialog();
 		});
+		
+		
+		selectedClusterCountLabel.getStyle().set("font-weight", "600");
+		selectedClusterCountLabel.getStyle().set("margin-left", "8px");
+		selectedClusterCountLabel.getStyle().set("align-self", "center");
 
-		HorizontalLayout buttonBar = new HorizontalLayout(refreshTreeGridBtn, saveChangesBtn, showPendingBtn);
+		HorizontalLayout buttonBar =
+		    new HorizontalLayout(refreshTreeGridBtn, saveChangesBtn, showPendingBtn, selectedClusterCountLabel);
+
+
+//		HorizontalLayout buttonBar = new HorizontalLayout(refreshTreeGridBtn, saveChangesBtn, showPendingBtn);
 		buttonBar.setSpacing(true);
 		buttonBar.setJustifyContentMode(JustifyContentMode.END);
 
@@ -633,6 +637,9 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 
 		assocCampaignLayout.add(gridWithButtonLayout, popEditForm);
 		assocCampaignLayout.setFlexGrow(4, gridWithButtonLayout);
+		
+		refreshSelectedClusterCountLabel(); 
+		
 		return assocCampaignLayout;
 	}
 	
@@ -767,11 +774,14 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 	            Long pop0_4 = row.pop0_4 == null ? 0L : row.pop0_4;
 	            Long pop5_10 = row.pop5_10 == null ? 0L : row.pop5_10;
 	            Long pop4_23m = row.pop4_23m == null ? 0L : row.pop4_23m;
+	            Long pop4_59m = row.pop4_59m == null ? 0L : row.pop4_59m;
+
 
 	            Long totalPopulation =
-	                    pop0_4
+	                    		pop0_4
 	                            + pop5_10
-	                            + pop4_23m;
+	                            + pop4_23m
+	                            + pop4_59m;
 
 	            CampaignTreeGridDto cluster =
 	                    new CampaignTreeGridDtoImpl(
@@ -779,6 +789,7 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 	                            pop0_4,
 	                            pop5_10,
 	                            pop4_23m,
+	                            pop4_59m,
 	                            row.clusterId,
 	                            row.districtUuid,
 	                            row.clusterUuid,
@@ -822,10 +833,16 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 	                            district.getClusterData().stream()
 	                                    .mapToLong(c -> c.getPopulationData4_23M() == null ? 0L : c.getPopulationData4_23M())
 	                                    .sum();
+	                    
+	                    long district4_59m =
+	                            district.getClusterData().stream()
+	                                    .mapToLong(c -> c.getPopulationData4_59M() == null ? 0L : c.getPopulationData4_59M())
+	                                    .sum();
 
 	                    district.setPopulationData(district0_4);
 	                    district.setPopulationData5_10(district5_10);
 	                    district.setPopulationData4_23M(district4_23m);
+	                    district.setPopulationData4_59M(district4_59m);
 
 	                    // District selected if any cluster selected
 	                    boolean districtSelected =
@@ -858,10 +875,18 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 	                    region.getDistrictData().stream()
 	                            .mapToLong(d -> d.getPopulationData4_23M() == null ? 0L : d.getPopulationData4_23M())
 	                            .sum();
+	            
+	            long region4_59m =
+	                    region.getDistrictData().stream()
+	                            .mapToLong(d -> d.getPopulationData4_59M() == null ? 0L : d.getPopulationData4_59M())
+	                            .sum();
+
 
 	            region.setPopulationData(region0_4);
 	            region.setPopulationData5_10(region5_10);
 	            region.setPopulationData4_23M(region4_23m);
+	            region.setPopulationData4_59M(region4_59m);
+
 
 	            // Region selected if any district selected
 	            boolean regionSelected =
@@ -887,10 +912,17 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 	                area.getRegionData().stream()
 	                        .mapToLong(r -> r.getPopulationData4_23M() == null ? 0L : r.getPopulationData4_23M())
 	                        .sum();
+	        
+	        long area4_59m =
+	                area.getRegionData().stream()
+	                        .mapToLong(r -> r.getPopulationData4_59M() == null ? 0L : r.getPopulationData4_59M())
+	                        .sum();
 
 	        area.setPopulationData(area0_4);
 	        area.setPopulationData5_10(area5_10);
 	        area.setPopulationData4_23M(area4_23m);
+	        area.setPopulationData4_59M(area4_59m);
+
 
 	        // Area selected if any region selected
 	        boolean areaSelected =
@@ -941,6 +973,8 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		long total0_59 = 0;
 		long total5_10 = 0;
 		long total4_23M = 0;
+		long total4_59M = 0;
+
 		List<CampaignTreeGridDto> children = getChildrenForSelection(item);
 		for (CampaignTreeGridDto child : children) {
 			// post-order: ensure child totals are computed first
@@ -951,18 +985,25 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 					total0_59 += child.getPopulationData() != null ? child.getPopulationData() : 0L;
 					total5_10 += child.getPopulationData5_10() != null ? child.getPopulationData5_10() : 0L;
 					total4_23M += child.getPopulationData4_23M() != null ? child.getPopulationData4_23M() : 0L;
+					total4_59M += child.getPopulationData4_59M() != null ? child.getPopulationData4_59M() : 0L;
+
 				}
 			} else {
 				// child is a parent; its totals already reflect selected descendants
 				total0_59 += child.getPopulationData() != null ? child.getPopulationData() : 0L;
 				total5_10 += child.getPopulationData5_10() != null ? child.getPopulationData5_10() : 0L;
 				total4_23M += child.getPopulationData4_23M() != null ? child.getPopulationData4_23M() : 0L;
+				total4_59M += child.getPopulationData4_59M() != null ? child.getPopulationData4_59M() : 0L;
+
 			}
 		}
 		item.setPopulationData(total0_59);
 		item.setPopulationData5_10(total5_10);
 		item.setPopulationData4_23M(total4_23M);
+		item.setPopulationData4_59M(total4_59M);
+
 	}
+	
 
 	private void recomputeAllTotals() {
 		if (treeGrid == null || treeGrid.getTreeData() == null)
@@ -972,6 +1013,7 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		}
 		treeGrid.getDataProvider().refreshAll();
 		updateFooterTotals(); // footer now uses updated root totals
+		refreshSelectedClusterCountLabel();
 	}
 
 	private void updateFooterTotals() {
@@ -987,10 +1029,14 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		long total5_10 = 0;
 		long total4_23M = 0;
 
+		long total4_59M = 0;
+
 		for (CampaignTreeGridDto root : roots) {
 			total0_59 += root.getPopulationData() != null ? root.getPopulationData() : 0L;
 			total5_10 += root.getPopulationData5_10() != null ? root.getPopulationData5_10() : 0L;
 			total4_23M += root.getPopulationData4_23M() != null ? root.getPopulationData4_23M() : 0L;
+			total4_59M += root.getPopulationData4_59M() != null ? root.getPopulationData4_59M() : 0L;
+
 		}
 
 		// Determine number format based on user language
@@ -1011,13 +1057,14 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 
 		// Column indices:
 		// 0 - selection checkbox, 1 - hierarchy name, 2 - target 0-59, 3 - target
-		// 60-120, 4 - target 4-23, 5 - modality, 6 - status, 7 - delete checkbox
+		// 60-120, 4 - target 4-23, 5 - target 4-59, 6 - modality, 7 - status, 8 - delete checkbox
 		footerRow.getCell(columns.get(1)).setText("National Target Total");
 		footerRow.getCell(columns.get(2)).setText(format.format(total0_59));
 		footerRow.getCell(columns.get(3)).setText(format.format(total5_10));
 		footerRow.getCell(columns.get(4)).setText(format.format(total4_23M));
-		footerRow.getCell(columns.get(5)).setText(""); // Modality – no total
-		footerRow.getCell(columns.get(6)).setText(""); // Status – no total
+		footerRow.getCell(columns.get(5)).setText(format.format(total4_59M));
+		footerRow.getCell(columns.get(6)).setText(""); // Modality – no total
+		footerRow.getCell(columns.get(7)).setText(""); // Status – no total
 		// Delete column (index 7) remains empty
 	}
 
@@ -1160,77 +1207,14 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 				pendingSelectedClusters.clear();
 				pendingDeselectedClusters.clear();
 				hasPendingChanges = false;
-
+				markClean();
 				treeGrid.getDataProvider().refreshAll();
 				updateAllParentSelections();
 			}
+			
+			refreshSelectedClusterCountLabel();
+
 		});
-
-//        confirmDialog.addConfirmListener(event -> {
-//            try {
-//                // Commit selections
-//                if (!pendingSelectedClusters.isEmpty()) {
-//                    FacadeProvider.getPopulationDataFacade()
-//                        .updateClusterSelectionByClusterIds(
-//                            new ArrayList<>(pendingSelectedClusters), 
-//                            campaignDto.getUuid(), 
-//                            true
-//                        );
-//                }
-//                
-//                // Commit deselections
-//                if (!pendingDeselectedClusters.isEmpty()) {
-//                    FacadeProvider.getPopulationDataFacade()
-//                        .updateClusterSelectionByClusterIds(
-//                            new ArrayList<>(pendingDeselectedClusters), 
-//                            campaignDto.getUuid(), 
-//                            false
-//                        );
-//                }
-//                
-//
-//                
-//                // Refresh campaign DTO
-//                campaignDto = FacadeProvider.getCampaignFacade().getByUuid(campaignDto.getUuid());
-//                
-//                buildSelectedSetsFromCheckboxState();
-//                
-//                campaignDto.setAreas(new HashSet<AreaReferenceDto>(areass));
-//                campaignDto.setRegion(new HashSet<RegionReferenceDto>(region));
-//                campaignDto.setDistricts(new HashSet<DistrictReferenceDto>(districts));
-//                campaignDto.setCommunity(new HashSet<CommunityReferenceDto>(community));
-//                
-//                FacadeProvider.getCampaignFacade().saveCampaignPopulationData(campaignDto);
-//
-//
-//                
-//                // Update selected UUID sets
-//                selectedClusterUuids = campaignDto.getCommunity().stream()
-//                    .map(CommunityReferenceDto::getUuid)
-//                    .collect(Collectors.toSet());
-//                
-//                Notification.show("Changes saved successfully! " + 
-//                    (pendingSelectedClusters.size() + pendingDeselectedClusters.size()) + " updates applied")
-//                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-//                
-//                pendingSelectedClusters.clear();
-//                pendingDeselectedClusters.clear();
-//                hasPendingChanges = false;
-//                // Optionally refresh the grid to show saved state
-////                refreshTreeGridSilently();
-//
-//                
-//                treeGrid.getDataProvider().refreshAll();
-//                updateAllParentSelections();
-//                applyRowStyling();
-//                
-//            } catch (Exception ex) {
-//                logger.error("Error saving changes", ex);
-//                Notification.show("Error saving changes: " + ex.getMessage())
-//                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-//            }
-//        });
-
 		confirmDialog.open();
 	}
 
@@ -1296,13 +1280,16 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 			pendingSelectedClusters.clear();
 			pendingDeselectedClusters.clear();
 			hasPendingChanges = false;
-
+			markClean();
 			Notification.show("Pending changes discarded", 2000, Notification.Position.MIDDLE)
 					.addThemeVariants(NotificationVariant.LUMO_ERROR);
 
 		} finally {
 			isInitializing = false;
 		}
+		
+		refreshSelectedClusterCountLabel();
+
 	}
 
 	/**
@@ -1401,7 +1388,7 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		}
 		updateAllParentSelections(); // Ensure full propagation after init
 		recomputeAllTotals();
-		;
+		refreshSelectedClusterCountLabel();
 	}
 
 	private void initializeSelectionsRecursive(CampaignTreeGridDto item) {
@@ -1494,6 +1481,9 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		} finally {
 			isInitializing = false;
 		}
+		
+		refreshSelectedClusterCountLabel();
+
 	}
 
 	private List<CampaignTreeGridDto> getChildrenForSelection(CampaignTreeGridDto item) {
@@ -1523,11 +1513,12 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 
 				Integer popDataAge5_10 = FacadeProvider.getPopulationDataFacade()
 						.getDistrictPopulationByUuidAndAgeGroup(ee.getUuid(), campaignDto.getUuid(), "AGE_5_10");
-//    							};
 
 				Integer popDataAge4_23M = FacadeProvider.getPopulationDataFacade()
 						.getDistrictPopulationByUuidAndAgeGroup(ee.getUuid(), campaignDto.getUuid(), "AGE_4_23M");
-//    							};
+
+				Integer popDataAge4_59M = FacadeProvider.getPopulationDataFacade()
+						.getDistrictPopulationByUuidAndAgeGroup(ee.getUuid(), campaignDto.getUuid(), "AGE_4_59M");
 
 				String districtModality_0_4 = FacadeProvider.getPopulationDataFacade()
 						.getDistrictModalityByUuidAndCampaignAndAgeGroup(ee.getUuid(), campaignDto.getUuid(),
@@ -1536,7 +1527,7 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 						.getDistrictStatusByCampaign(ee.getUuid(), campaignDto.getUuid(), "AGE_0_4");
 
 				createDialogBasics(ee.getUuid(), ee.getPopulationData(), ee.getName(), "AGE_0_4", campaignDto, ee,
-						popDataAge0_4, popDataAge5_10, popDataAge4_23M, districtModality_0_4, districtStatus_0_4);
+						popDataAge0_4, popDataAge5_10, popDataAge4_23M, popDataAge4_59M, districtModality_0_4, districtStatus_0_4);
 			}
 
 			else if (ee.getPopulationData5_10() != null) {
@@ -1550,7 +1541,9 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 
 				Integer popDataAge4_23M = FacadeProvider.getPopulationDataFacade()
 						.getDistrictPopulationByUuidAndAgeGroup(ee.getUuid(), campaignDto.getUuid(), "AGE_4_23M");
-//    							};
+
+				Integer popDataAge4_59M = FacadeProvider.getPopulationDataFacade()
+						.getDistrictPopulationByUuidAndAgeGroup(ee.getUuid(), campaignDto.getUuid(), "AGE_4_59M");
 
 				String districtModality_5_10 = FacadeProvider.getPopulationDataFacade()
 						.getDistrictModalityByUuidAndCampaignAndAgeGroup(ee.getUuid(), campaignDto.getUuid(),
@@ -1559,16 +1552,10 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 				String districtStatus_5_10 = FacadeProvider.getPopulationDataFacade()
 						.getDistrictStatusByCampaign(ee.getUuid(), campaignDto.getUuid(), "AGE_5_10");
 
-//    							if (popDataAge0_4 == null) {
-//    								popDataAge0_4 = 0;
-//    							}
-
+				
 				createDialogBasics(ee.getUuid(), ee.getPopulationData(), ee.getName(), "AGE_5_10", campaignDto, ee,
-						popDataAge0_4, popDataAge5_10, popDataAge4_23M, districtModality_5_10, districtStatus_5_10);
+						popDataAge0_4, popDataAge5_10, popDataAge4_23M, popDataAge4_59M, districtModality_5_10, districtStatus_5_10);
 
-//    							createDialogBasics(ee.getItem().getUuid(), ee.getItem().getPopulationData(), ee.getItem().getName(),
-//    									ee.getItem().getAgeGroup(), campaignDto, ee.getItem(), popDataAge5_10,
-//    									districtModality_5_10, districtStatus_5_10);
 			} else if (ee.getPopulationData4_23M() != null) {
 				System.out.println("Age Group from item click " + ee.getAgeGroup());
 
@@ -1580,8 +1567,11 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 
 				Integer popDataAge4_23M = FacadeProvider.getPopulationDataFacade()
 						.getDistrictPopulationByUuidAndAgeGroup(ee.getUuid(), campaignDto.getUuid(), "AGE_4_23M");
-//    							};
+				
+				Integer popDataAge4_59M = FacadeProvider.getPopulationDataFacade()
+						.getDistrictPopulationByUuidAndAgeGroup(ee.getUuid(), campaignDto.getUuid(), "AGE_4_59M");
 
+				
 				String districtModality_4_23M = FacadeProvider.getPopulationDataFacade()
 						.getDistrictModalityByUuidAndCampaignAndAgeGroup(ee.getUuid(), campaignDto.getUuid(),
 								"AGE_4_23M");
@@ -1590,7 +1580,33 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 						.getDistrictStatusByCampaign(ee.getUuid(), campaignDto.getUuid(), "AGE_4_23M");
 
 				createDialogBasics(ee.getUuid(), ee.getPopulationData(), ee.getName(), "AGE_4_23M", campaignDto, ee,
-						popDataAge0_4, popDataAge5_10, popDataAge4_23M, districtModality_4_23M, districtStatus_4_23M);
+						popDataAge0_4, popDataAge5_10, popDataAge4_23M, popDataAge4_59M, districtModality_4_23M, districtStatus_4_23M);
+
+			}else if (ee.getPopulationData4_59M() != null) {
+				System.out.println("Age Group from item click " + ee.getAgeGroup());
+
+				Integer popDataAge5_10 = FacadeProvider.getPopulationDataFacade()
+						.getDistrictPopulationByUuidAndAgeGroup(ee.getUuid(), campaignDto.getUuid(), "AGE_5_10");
+
+				Integer popDataAge0_4 = FacadeProvider.getPopulationDataFacade()
+						.getDistrictPopulationByUuidAndAgeGroup(ee.getUuid(), campaignDto.getUuid(), "AGE_0_4");
+
+				Integer popDataAge4_23M = FacadeProvider.getPopulationDataFacade()
+						.getDistrictPopulationByUuidAndAgeGroup(ee.getUuid(), campaignDto.getUuid(), "AGE_4_23M");
+				
+				Integer popDataAge4_59M = FacadeProvider.getPopulationDataFacade()
+						.getDistrictPopulationByUuidAndAgeGroup(ee.getUuid(), campaignDto.getUuid(), "AGE_4_59M");
+
+				
+				String districtModality_4_59M = FacadeProvider.getPopulationDataFacade()
+						.getDistrictModalityByUuidAndCampaignAndAgeGroup(ee.getUuid(), campaignDto.getUuid(),
+								"AGE_4_59M");
+
+				String districtStatus_4_59M = FacadeProvider.getPopulationDataFacade()
+						.getDistrictStatusByCampaign(ee.getUuid(), campaignDto.getUuid(), "AGE_4_59M");
+
+				createDialogBasics(ee.getUuid(), ee.getPopulationData(), ee.getName(), "AGE_4_59M", campaignDto, ee,
+						popDataAge0_4, popDataAge5_10, popDataAge4_23M, popDataAge4_59M, districtModality_4_59M, districtStatus_4_59M);
 
 			} else {
 
@@ -1681,26 +1697,33 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		clusterFilter.setRequiredIndicatorVisible(true);
 
 		popData0_4 = new IntegerField("Target 0-59M");
-//				I18nProperties.getCaption(Captions.District_population) + " Age 0_4");
-
 		popDataAge5_10 = new IntegerField("Target 60-120M");
-//				I18nProperties.getCaption(Captions.District_population) + " Age 5_10");
 		popDataAge4_23M = new IntegerField("Target 4-23M");
-		popDataAge4_23M.setMin(0);
+		popDataAge4_59M = new IntegerField("Target 4-59M");
+
+		
 		popData0_4.setMin(0);
 		popDataAge5_10.setMin(0);
+		popDataAge4_23M.setMin(0);
+		popDataAge4_59M.setMin(0);
+
+
 
 		popData0_4.setRequiredIndicatorVisible(true);
 		popDataAge5_10.setRequiredIndicatorVisible(true);
 		popDataAge4_23M.setRequiredIndicatorVisible(true);
+		popDataAge4_59M.setRequiredIndicatorVisible(true);
 
-		popDataAge4_23M.setErrorMessage("Negative Values not Allowed");
+
 		popData0_4.setErrorMessage("Negative Values not Allowed");
 		popDataAge5_10.setErrorMessage("Negative Values not Allowed");
+		popDataAge4_23M.setErrorMessage("Negative Values not Allowed");
+		popDataAge4_59M.setErrorMessage("Negative Values not Allowed");
+
 
 		districtModality = new ComboBox<String>("Modality");
-		districtModality.setPlaceholder(I18nProperties.getCaption(Captions.selectModality));
-		districtModality.setItems("H2H", "M2M", "S2S", "HF2HF", "Mixed");
+
+		districtModality.setItems("H2H", "M2M", "S2S", "HF2HF", "Mixed", "M2M S2S", "General");
 
 		districtStatus = new ComboBox<String>("Status");
 		districtStatus.setPlaceholder(I18nProperties.getCaption(Captions.selectStatus));
@@ -1710,12 +1733,16 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		popData0_4.setVisible(false);
 		popDataAge5_10.setVisible(false);
 		popDataAge4_23M.setVisible(false);
+		popDataAge4_59M.setVisible(false);
+		
 		districtModality.setVisible(false);
 		districtStatus.setVisible(false);
 
 		popData0_4.setValue(null);
 		popDataAge5_10.setValue(null);
 		popDataAge4_23M.setValue(null);
+		popDataAge4_59M.setValue(null);
+		
 		districtModality.setValue(null);
 		districtStatus.setValue(null);
 
@@ -1726,8 +1753,7 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 				provinceFilter.setItems(FacadeProvider.getRegionFacade().getAllActiveByArea(e.getValue().getUuid()));
 
 			} else {
-//			criteria.area(null);
-//			refreshGridData();
+
 			}
 
 		});
@@ -1780,21 +1806,14 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 					});
 					allClusters.sort(Comparator.comparing(CommunityReferenceDto::getNumber));
 					clusterFilter.setItems(allClusters);
-
-//					clusterFilter
-//							.setItems(
-//									FacadeProvider.getCommunityFacade().getAllActiveByDistrict(e.getValue().getUuid()));
-
-//									FacadeProvider.getDistrictFacade().getAllActiveByRegion(e.getValue().getUuid()));
-				}
+}
 
 				clusterFilter.setVisible(true);
 
 				DistrictReferenceDto district = e.getValue();
 
 			} else {
-//				criteria.district(null);
-//				refreshGridData();
+
 			}
 		});
 
@@ -1805,7 +1824,10 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 					popData0_4.setVisible(true);
 					popDataAge5_10.setVisible(true);
 					popDataAge4_23M.setVisible(true);
+					popDataAge4_59M.setVisible(true);
+
 					districtModality.setVisible(true);
+					
 					districtStatus.setVisible(true);
 
 					for (PopulationDataDto xx : FacadeProvider.getPopulationDataFacade()
@@ -1828,22 +1850,28 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 						popDataAge4_23M.setValue(xx.getPopulation());
 						System.out.println(xx.getPopulation() + "666666666666666666666666666666666666666666666");
 					}	
+					
+					for (PopulationDataDto xx : FacadeProvider.getPopulationDataFacade()
+							.getClusterPopulationByTypeUsingUUIDs(clusterFilter.getValue().getUuid(), campaignDto.getUuid(),
+									AgeGroup.AGE_4_59M)) {
+						popDataAge4_59M.setValue(xx.getPopulation());
+						System.out.println(xx.getPopulation() + "666666666666666666666666666666666666666666666");
+					}	
 				}else {
 					
 					popData0_4.setVisible(false);
 					popDataAge5_10.setVisible(false);
 					popDataAge4_23M.setVisible(false);
+					popDataAge4_59M.setVisible(false);
+
+					
 					districtModality.setVisible(false);
 					districtStatus.setVisible(false);
 					
 					clusterFilter.clear();
 					Notification.show("Population Target Exist for this Cluster. Select the cluster on the grid to edit" , 7000, Position.MIDDLE);
 				}
-//				filteredDataProvider.setFilter(criteria);
-				
-
-//					criteria.district(district);
-//					refreshGridData();
+ 
 
 			} else {
 
@@ -1872,7 +1900,7 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		});
 
 		formx.add(regionFilter, provinceFilter, districtFilter, clusterFilter, popData0_4, popDataAge5_10,
-				popDataAge4_23M, districtModality, districtStatus);
+				popDataAge4_23M, popDataAge4_59M, districtModality, districtStatus);
 		formx.setColspan(regionFilter, 1);
 		formx.setColspan(provinceFilter, 1);
 		formx.setColspan(districtFilter, 1);
@@ -1880,6 +1908,7 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		formx.setColspan(popData0_4, 1);
 		formx.setColspan(popDataAge5_10, 1);
 		formx.setColspan(popDataAge4_23M, 1);
+		formx.setColspan(popDataAge4_59M, 1);
 		formx.setColspan(districtModality, 1);
 		formx.setColspan(districtStatus, 2);
 
@@ -1955,69 +1984,9 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		    } else {
 		    	
 		    	showErrorNotification("Please select a geographic unit(s) on the District or Cluster Level to delete.");
-//		        Notification.show("Please select at least one item on the District or Cluster Level to delete.", 3000, Notification.Position.MIDDLE);
 		    }
 		});
 
-//		deleteButton.addClickListener(delete -> {
-//			if (!deletelist.isEmpty()) {
-//
-//				// Open a confirmation dialog to confirm deletion
-//				ConfirmDialog confirmationDialog = new ConfirmDialog();
-//				confirmationDialog.setHeader("Delete Population Data");
-//				long distinctCount = deletelist.stream().map(CampaignTreeGridDto::getId) // Extract the ID or
-//																							// any unique
-//																							// property
-//						.distinct() // Eliminate duplicates
-//						.count(); // Count distinct elements
-//				confirmationDialog.setText("Are you sure you want to delete the population data for " + distinctCount
-//						+ " selected districts?");
-//				confirmationDialog.setCancelable(true);
-//				confirmationDialog.setRejectable(false);
-//				confirmationDialog.setConfirmText("Delete");
-//				confirmationDialog.setCancelText("Cancel");
-//				confirmationDialog.setCancelButtonTheme("error");
-//
-//				confirmationDialog.addCancelListener(e -> {
-//					treeGrid.getDataProvider().refreshAll();
-//					deletelist.clear();
-//					confirmationDialog.close();
-//
-//				});
-//
-//				confirmationDialog.addConfirmListener(event -> {
-//					try {
-//						List<Long> clusterIDs = new ArrayList<>();
-//						for (CampaignTreeGridDto treeData : deletelist) {
-//							clusterIDs.add(treeData.getId());
-//
-//						}
-//
-//						FacadeProvider.getPopulationDataFacade().deletePopulationDataByClusters(clusterIDs,
-//								campaignDto_ != null ? campaignDto_.getUuid() : "");
-//
-//					} catch (Exception e) {
-//						Notification.show("Error deleting population data: " + e.getMessage(), 10000,
-//								Notification.Position.MIDDLE);
-//					} finally {
-//						Notification.show(
-//								"Population data deleted successfully. Please re-open the Campaign Basics form to recieve updated Population Data Table.",
-//								5000, Notification.Position.MIDDLE);
-////								Notification.show("Population data deleted successfully.");
-//						treeGrid.getDataProvider().refreshAll();
-//						deletelist.clear();
-//						confirmationDialog.close();
-////								ageGroupSelectionDialog.close();
-//					}
-//				});
-//
-//				confirmationDialog.open();
-//
-//			} else {
-//				// Handle the case when no selection is made (optional)
-//				Notification.show("Please select an age group before confirming.", 3000, Notification.Position.MIDDLE);
-//			}
-//		});
 
 		vert.add(buttonLay, formx, buttonAfterLay);
 
@@ -2075,7 +2044,7 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 			Notification.show("Please select a Status.").addThemeVariants(NotificationVariant.LUMO_ERROR);
 			return;
 		}
-		if (popData0_4.isEmpty() || popDataAge5_10.isEmpty() || popDataAge4_23M.isEmpty()) {
+		if (popData0_4.isEmpty() || popDataAge5_10.isEmpty() || popDataAge4_23M.isEmpty() || popDataAge4_59M.isEmpty()) {
 			popData0_4.isInvalid();
 			popData0_4.setInvalid(true);
 			popData0_4.setErrorMessage("Please provide numeric values for Population Target");
@@ -2087,14 +2056,18 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 			popDataAge4_23M.isInvalid();
 			popDataAge4_23M.setInvalid(true);
 			popDataAge4_23M.setErrorMessage("Please provide numeric values for Population Target");
+			
+			popDataAge4_59M.isInvalid();
+			popDataAge4_59M.setInvalid(true);
+			popDataAge4_59M.setErrorMessage("Please provide numeric values for Population Target");
 
 			Notification.show("Please provide numeric values for all Target population fields.")
 					.addThemeVariants(NotificationVariant.LUMO_ERROR);
 
 			return;
 		}
-		if (popData0_4.isInvalid() || popDataAge5_10.isInvalid() || popDataAge4_23M.isInvalid()
-				|| popData0_4.getValue() < 0 || popDataAge5_10.getValue() < 0 || popDataAge4_23M.getValue() < 0) {
+		if (popData0_4.isInvalid() || popDataAge5_10.isInvalid() || popDataAge4_23M.isInvalid() || popDataAge4_59M.isInvalid()
+				|| popData0_4.getValue() < 0 || popDataAge5_10.getValue() < 0 || popDataAge4_23M.getValue() < 0 || popDataAge4_59M.getValue() < 0) {
 			popData0_4.isInvalid();
 			popData0_4.setInvalid(true);
 			popData0_4.setErrorMessage("Negative Values are not allowed");
@@ -2105,7 +2078,13 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 
 			popDataAge4_23M.isInvalid();
 			popDataAge4_23M.setInvalid(true);
-			popDataAge4_23M.setErrorMessage("Negative Values are not allowed");
+			popDataAge4_23M.setErrorMessage("Please provide numeric values for Population Target");
+			
+			
+			popDataAge4_59M.isInvalid();
+			popDataAge4_59M.setInvalid(true);
+			popDataAge4_59M.setErrorMessage("Please provide numeric values for Population Target");
+			
 
 			Notification.show("Negative Values are not allowed for target populations.")
 					.addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -2118,13 +2097,36 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 			PopulationDataDto newPopulationData_10 = PopulationDataDto.build(collectionDate);
 			PopulationDataDto newPopulationData_0_4 = PopulationDataDto.build(collectionDate);
 			PopulationDataDto newPopulationData_423M = PopulationDataDto.build(collectionDate);
+			PopulationDataDto newPopulationData_459M = PopulationDataDto.build(collectionDate);
+
 
 			List<PopulationDataDto> itirationList = new ArrayList<PopulationDataDto>();
 			itirationList.add(newPopulationData_0_4);
 			itirationList.add(newPopulationData_10);
 			itirationList.add(newPopulationData_423M);
+			itirationList.add(newPopulationData_459M);
+
 
 			System.out.println("Age Group rom ope  is age 0_4");
+			if (popDataAge4_59M.getValue() != null) {
+				newPopulationData_459M
+						.setCampaign(FacadeProvider.getCampaignFacade().getReferenceByUuid(campaignDto.getUuid()));
+				newPopulationData_459M.setRegion(
+						FacadeProvider.getRegionFacade().getRegionReferenceByUuid(provinceFilter.getValue().getUuid()));
+				newPopulationData_459M.setDistrict(FacadeProvider.getDistrictFacade()
+						.getDistrictReferenceByUuid(districtFilter.getValue().getUuid()));
+				newPopulationData_459M.setCommunity(FacadeProvider.getCommunityFacade()
+						.getCommunityReferenceByUuid(clusterFilter.getValue().getUuid()));
+				newPopulationData_459M.setModality(districtModality.getValue());
+				newPopulationData_459M.setDistrictStatus(districtStatus.getValue());
+				newPopulationData_459M.setAgeGroup(AgeGroup.AGE_4_59M);
+				newPopulationData_459M.setPopulation(popDataAge4_59M.getValue());
+				newPopulationData_459M.setSelected(true);
+
+				populationDataList.add(newPopulationData_459M);
+
+			}
+			
 			if (popDataAge4_23M.getValue() != null) {
 				newPopulationData_423M
 						.setCampaign(FacadeProvider.getCampaignFacade().getReferenceByUuid(campaignDto.getUuid()));
@@ -2194,6 +2196,18 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 					System.out.println(popDataAge5_10.getValue() + "GGGGGGGGGGGG IN THE TRY " + popData0_4.getValue());
 
 					try {
+						
+						if (popDataAge4_59M.getValue() != null) {
+							try {
+								FacadeProvider.getPopulationDataFacade().savePopulationData(populationDataList);
+							} catch (Exception ex) {
+								System.out.println(ex + "Exception");
+							} finally {
+								populationDataList.remove(newPopulationData_459M);
+
+							}
+
+						}
 
 						if (popDataAge4_23M.getValue() != null) {
 							try {
@@ -2252,7 +2266,10 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 						popData0_4.clear();
 						popDataAge5_10.clear();
 						popDataAge4_23M.clear();
+						popDataAge4_59M.clear();
+
 						districtModality.clear();
+						
 						districtStatus.clear();
 						
 						regionFilter.setInvalid(false);
@@ -2262,6 +2279,7 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 						popData0_4.setInvalid(false);
 						popDataAge5_10.setInvalid(false);
 						popDataAge4_23M.setInvalid(false);
+						popDataAge4_59M.setInvalid(false);
 
 						
 						
@@ -2286,7 +2304,7 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 
 	private void createDialogBasics(String Uuid, Long selectedPopData, String name_, String ageGroup,
 			CampaignDto campaignDto_, CampaignTreeGridDto campaignTreeGridDto, Integer populationByAgeGroup,
-			Integer populationByAgeGroup5_10, Integer populationByAgeGroup4_23M, String districtModalityByAgeGroup,
+			Integer populationByAgeGroup5_10, Integer populationByAgeGroup4_23M, Integer populationByAgeGroup4_59M, String districtModalityByAgeGroup,
 			String districtStatusByAgeGroup) {
 		Dialog dialog = new Dialog();
 
@@ -2303,7 +2321,7 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 
 		VerticalLayout dialogLayout = createDialogLayoutByAge(name_, ageGroup, selectedPopData, saveButton, Uuid,
 				campaignDto_, dialog, campaignTreeGridDto, populationByAgeGroup, populationByAgeGroup5_10,
-				populationByAgeGroup4_23M, districtModalityByAgeGroup, districtStatusByAgeGroup);
+				populationByAgeGroup4_23M, populationByAgeGroup4_59M, districtModalityByAgeGroup, districtStatusByAgeGroup);
 
 		dialog.add(dialogLayout);
 
@@ -2317,7 +2335,7 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 	private static VerticalLayout createDialogLayoutByAge(String name_, String ageGroup, Long selectedPopData,
 			Button saveButton, String Uuid, CampaignDto campaignDto_, Dialog dialog,
 			CampaignTreeGridDto campaignTreeGridDto, Integer populationByAgeGroup, Integer populationByAgeGroup5_10,
-			Integer populationByAgeGroup4_23M, String districtModalityByAgeGroup, String districtStatusByAgeGroup) {
+			Integer populationByAgeGroup4_23M, Integer populationByAgeGroup4_59M, String districtModalityByAgeGroup, String districtStatusByAgeGroup) {
 
 		TextField district = new TextField(I18nProperties.getCaption(Captions.community));
 		district.setValue(name_);
@@ -2330,6 +2348,9 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 
 		IntegerField popData4_23M = new IntegerField(
 				I18nProperties.getCaption(Captions.District_target) + " " + "4-23M");
+		
+		IntegerField popData4_59M = new IntegerField(
+				I18nProperties.getCaption(Captions.District_target) + " " + "4-59M");
 
 		ComboBox<Modality> districtModalityCombo = new ComboBox<>("Modality");
 		districtModalityCombo.setItems(Modality.values());
@@ -2355,11 +2376,14 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		popData.setWidthFull();
 		popData5_10.setWidthFull();
 		popData4_23M.setWidthFull();
+		popData4_59M.setWidthFull();
 
+		popData4_59M.setMin(0);
 		popData4_23M.setMin(0);
 		popData5_10.setMin(0);
 		popData.setMin(0);
 
+		popData4_59M.setErrorMessage("Negative Values not Allowed");
 		popData4_23M.setErrorMessage("Negative Values not Allowed");
 		popData5_10.setErrorMessage("Negative Values not Allowed");
 		popData.setErrorMessage("Negative Values not Allowed");
@@ -2384,6 +2408,12 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		} else {
 			popData4_23M.setValue(null);
 		}
+		
+		if (populationByAgeGroup4_59M != null) {
+			popData4_59M.setValue(populationByAgeGroup4_59M);
+		} else {
+			popData4_59M.setValue(null);
+		}
 
 		if (districtModalityByAgeGroup != null && !districtModalityByAgeGroup.trim().isEmpty()) {
 			districtModalityCombo.setValue(Modality.fromValue(districtModalityByAgeGroup));
@@ -2398,13 +2428,14 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 		}
 
 		saveButton.addClickListener(e -> {
-			if (popData.isInvalid() || popData5_10.isInvalid() || popData4_23M.isInvalid()) {
+			if (popData.isInvalid() || popData5_10.isInvalid() || popData4_23M.isInvalid() || popData4_59M.isInvalid() ) { 
 				Notification.show("Negative Values are not allowed").addThemeVariants(NotificationVariant.LUMO_ERROR);
 				return;
 			}
 			List<PopulationDataDto> popDataDto;
 			List<PopulationDataDto> popDataDto5_10;
 			List<PopulationDataDto> popDataDto4_23M;
+			List<PopulationDataDto> popDataDto4_59M;
 			List<PopulationDataDto> district_Modality;
 			List<PopulationDataDto> district_Status;
 
@@ -2422,20 +2453,22 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 				popDataDto4_23M = FacadeProvider.getPopulationDataFacade().getClusterPopulationByTypeUsingUUIDs(Uuid,
 						campaignDto_.getUuid(), AgeGroup.AGE_4_23M);
 
+				popDataDto4_59M = FacadeProvider.getPopulationDataFacade().getClusterPopulationByTypeUsingUUIDs(Uuid,
+						campaignDto_.getUuid(), AgeGroup.AGE_4_59M);
+				
 				district_Modality = FacadeProvider.getPopulationDataFacade()
 						.getDistrictModalityByclusterUUIDsandCampaignUUIdAndAgeGroup(Uuid, campaignDto_.getUuid(),
 								ageGroup.equals("Age_0_4") ? AgeGroup.AGE_0_4
 										: ageGroup.equals("AGE_5_10") ? AgeGroup.AGE_5_10
-												: ageGroup.equals("AGE_4_23M") ? AgeGroup.AGE_4_23M : AgeGroup.AGE_0_4);
+												: ageGroup.equals("AGE_4_23M") ? AgeGroup.AGE_4_23M 
+														: ageGroup.equals("AGE_4_59M") ? AgeGroup.AGE_4_59M : AgeGroup.AGE_0_4);
 
 				district_Status = FacadeProvider.getPopulationDataFacade()
 						.getDistrictModalityByclusterUUIDsandCampaignUUIdAndAgeGroup(Uuid, campaignDto_.getUuid(),
 								ageGroup.equals("Age_0_4") ? AgeGroup.AGE_0_4
 										: ageGroup.equals("AGE_5_10") ? AgeGroup.AGE_5_10
-												: ageGroup.equals("AGE_4_23M") ? AgeGroup.AGE_4_23M : AgeGroup.AGE_0_4);
-
-//								ageGroup.equals("Age_0_4") ? AgeGroup.AGE_0_4
-//										: ageGroup.equals("AGE_5_10") ? AgeGroup.AGE_5_10 : AgeGroup.AGE_0_4);
+												: ageGroup.equals("AGE_4_23M") ? AgeGroup.AGE_4_23M 
+														: ageGroup.equals("AGE_4_59M") ? AgeGroup.AGE_4_59M : AgeGroup.AGE_0_4);
 
 				if (popData.getValue() != null
 						&& (districtModalityCombo.getValue() != null
@@ -2472,6 +2505,18 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 						popDataDto4_23M.get(0).setDistrictStatus(districtStatusCombo.getValue().toString());
 
 						popDataDtotoList.add(popDataDto4_23M.get(0));
+
+					}
+					
+					if (populationByAgeGroup4_59M != null) {
+
+						popDataDto4_59M.get(0).setPopulation(popData4_59M.getValue());
+
+						popDataDto4_59M.get(0).setModality(districtModalityCombo.getValue().toString());
+
+						popDataDto4_59M.get(0).setDistrictStatus(districtStatusCombo.getValue().toString());
+
+						popDataDtotoList.add(popDataDto4_59M.get(0));
 
 					}
 
@@ -2512,7 +2557,7 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 
 		});
 
-		VerticalLayout dialogLayout = new VerticalLayout(district, popData, popData5_10, popData4_23M,
+		VerticalLayout dialogLayout = new VerticalLayout(district, popData, popData5_10, popData4_23M, popData4_59M,
 				districtModalityCombo, districtStatusCombo);
 		dialogLayout.setPadding(false);
 		dialogLayout.setSpacing(false);
@@ -2732,4 +2777,81 @@ private CampaignTreeGridDto findParentDistrictRobust(CampaignTreeGridDto cluster
 			collectSelectedItemsRecursive(child);
 		}
 	}
+	
+	private int getEffectiveSelectedClusterCount() {
+	    if (treeGrid == null || treeGrid.getTreeData() == null) {
+	        return 0;
+	    }
+
+	    Set<String> selected = new HashSet<>();
+	    for (CampaignTreeGridDto root : treeGrid.getTreeData().getRootItems()) {
+	        collectSelectedClustersFromNode(root, selected);
+	    }
+	    return selected.size();
+	}
+
+	private void collectSelectedClustersFromNode(CampaignTreeGridDto node, Set<String> selected) {
+	    if (node == null) return;
+
+	    if ("cluster".equals(node.getLevelAssessed())) {
+	        if ((node.getSelected() || "true".equalsIgnoreCase(node.getSavedData())) && node.getUuid() != null) {
+	            selected.add(node.getUuid());
+	        }
+	        return;
+	    }
+
+	    for (CampaignTreeGridDto child : getChildrenForSelection(node)) {
+	        collectSelectedClustersFromNode(child, selected);
+	    }
+	}
+
+	private void refreshSelectedClusterCountLabel() {
+	    selectedClusterCountLabel.setText("Selected clusters: " + getEffectiveSelectedClusterCount());
+	}
+	
+	
+	public boolean hasUnsavedChanges() {
+	    return hasUnsavedChanges;
+	}
+	
+	public void discardUnsavedChangesForNavigation() {
+	    if (hasPendingChanges) {
+	        discardPendingChanges(); // your existing method
+	    }
+	}
+
+
+	public void setOnDirtyStateChanged(Runnable onDirtyStateChanged) {
+	    this.onDirtyStateChanged = onDirtyStateChanged;
+	}
+
+	private void markDirty() {
+	    if (!suppressUnsavedTracking && !hasUnsavedChanges) {
+	        hasUnsavedChanges = true;
+	        if (onDirtyStateChanged != null) {
+	            onDirtyStateChanged.run();
+	        }
+	    }
+	}
+
+	private void markClean() {
+	    if (hasUnsavedChanges) {
+	        hasUnsavedChanges = false;
+	        if (onDirtyStateChanged != null) {
+	            onDirtyStateChanged.run();
+	        }
+	    }
+	}
+
+	private void runWithoutDirtyTracking(Runnable action) {
+	    boolean prev = suppressUnsavedTracking;
+	    suppressUnsavedTracking = true;
+	    try {
+	        action.run();
+	    } finally {
+	        suppressUnsavedTracking = prev;
+	    }
+	}
+
+
 }

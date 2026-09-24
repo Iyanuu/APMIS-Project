@@ -139,6 +139,13 @@ public interface Captions {
 	String downloadCsv = "downloadCsv";
 	String log = "log";
 	String logoutnow = "logoutnow";
+	
+	String PreCampaignStartdate = "PreCampaignStartdate";
+	String PreCampaignEnddate = "PreCampaignEnddate";
+	String IntraCampaignStartdate = "IntraCampaignStartdate";
+	String IntraCampaignEnddate = "IntraCampaignEnddate";
+	String PostCampaignStartdate = "PostCampaignStartdate";
+	String PostCampaignEnddate = "PostCampaignEnddate";
 
 	String aboutAdditionalInfo = "aboutAdditionalInfo";
 	String aboutBrandedSormasVersion = "aboutBrandedSormasVersion";

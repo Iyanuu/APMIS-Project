@@ -48,6 +48,7 @@ import de.symeda.sormas.api.campaign.CampaignDto;
 import de.symeda.sormas.api.campaign.CampaignReferenceDto;
 import de.symeda.sormas.api.campaign.data.CampaignFormDataIndexDto;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaDto;
+import de.symeda.sormas.api.campaign.form.CampaignFormMetaGeographyLevel;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaReferenceDto;
 import de.symeda.sormas.api.i18n.Captions;
 import de.symeda.sormas.api.i18n.I18nProperties;
@@ -130,25 +131,45 @@ public class ImportCampaignsFormDataDialog extends Dialog {
 			try {
 				CampaignFormMetaDto campaignFormMetaData = FacadeProvider.getCampaignFormMetaFacade().getCampaignFormMetaByUuid(campaignForm.getUuid());
 
-				String templateFilePath;
+				String templateFilePath = "";
 				String templateFileName;
 				String fileNameAddition;
 				ImportFacade importFacade = FacadeProvider.getImportFacade();
 				
-				if(campaignFormMetaData.isDistrictentry()) {
-				importFacade.generateDistrictLevelCampaignFormImportTemplateFile(campaignForm.getUuid());
-				}else {
-				importFacade.generateCampaignFormImportTemplateFile(campaignForm.getUuid());
+				
+				switch(campaignFormMetaData.getGeographyLevel().toString()) {
+				case "REGION" -> {
+					importFacade.generateRegionLevelCampaignFormImportTemplateFile(campaignForm.getUuid());
+					templateFilePath = importFacade.getRegionLevelCampaignFormImportTemplateFilePath();
+
+				}
+				
+				case "PROVINCE" -> {
+					importFacade.generateProvinceLevelCampaignFormImportTemplateFile(campaignForm.getUuid());
+					templateFilePath = importFacade.getProvinceLevelCampaignFormImportTemplateFilePath();
+
+				}
+				
+				case "DISTRICT" -> {
+					importFacade.generateDistrictLevelCampaignFormImportTemplateFile(campaignForm.getUuid());
+					templateFilePath = importFacade.getDistrictLevelCampaignFormImportTemplateFilePath();
+
+				}
+				
+				case "CLUSTER" -> {
+					importFacade.generateCampaignFormImportTemplateFile(campaignForm.getUuid());
+					templateFilePath = importFacade.getCampaignFormImportTemplateFilePath();
+				}
+				
+				default -> {
+					importFacade.generateCampaignFormImportTemplateFile(campaignForm.getUuid());
+					templateFilePath = importFacade.getCampaignFormImportTemplateFilePath();
+				}
 				}
 
 				templateFileName = DataHelper.sanitizeFileName(campaignReferenceDto.getCaption().replaceAll(" ", "_"))
 						+ "_" + DataHelper.sanitizeFileName(campaignForm.getCaption().replaceAll(" ", "_")) + ".csv";
 				
-				if(campaignFormMetaData.isDistrictentry()) {
-					templateFilePath = importFacade.getDistrictLevelCampaignFormImportTemplateFilePath();
-				}else {
-					templateFilePath = importFacade.getCampaignFormImportTemplateFilePath();
-				}
 				
 				fileNameAddition = campaignForm.getCaption().replace(" ", "_") + "_campaignform_data_import_";
 

@@ -345,8 +345,11 @@ public class FormBuilderView extends VerticalLayout {
 		.setComparator(Comparator.comparing(CampaignFormMetaDto::getChangeDate)).setResizable(true);
 		grid.addColumn(CampaignFormMetaDto.DAYSTOEXPIRE).setHeader("Days To Expire").setSortable(true)
 				.setResizable(true);
-		grid.addColumn(CampaignFormMetaDto.DISTRICTENTRY).setHeader("District Data Entry").setSortable(true)
-				.setResizable(true);
+
+		
+//		grid.addColumn(CampaignFormMetaDto.GEOGRAPHYLEVEL).setHeader("Geography Level").setSortable(true)
+//		.setResizable(true);
+		
 		grid.addColumn(regionRenderer).setHeader("Region").setSortable(true);
 		grid.addColumn(CampaignFormMetaDto.LANGUAGE_CODE).setHeader("Language Code").setSortable(true);	
 		grid.addColumn(CampaignFormMetaDto.FORMVERSION).setHeader("Form Version").setSortable(true);		

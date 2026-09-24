@@ -7,28 +7,30 @@
 	<packaging>pom</packaging>
 	<version>1.0.44</version>
 	<properties>
-		<maven.compiler.source>11</maven.compiler.source>
-		<maven.compiler.target>11</maven.compiler.target>
+		<!--maven.compiler.source>11</maven.compiler.source>
+		<maven.compiler.target>11</maven.compiler.target-->
+		<maven.compiler.source>17</maven.compiler.source>
+		<maven.compiler.target>17</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
 		<!-- *** Payara module versions *** -->
-		<jackson.version>2.10.2</jackson.version>
+		<jackson.version>2.17.2</jackson.version>
 		<jakarta.activation.version>1.2.1</jakarta.activation.version>
 		<javaee.version>8.0.1</javaee.version>
 		<jersey.version>2.30</jersey.version>
 		<!-- Payara version used for release. Overwrite them in settings.xml for local development with different versions -->
-		<payara.version>5.2020.2</payara.version>
+		<payara.version>5.2022.5</payara.version>
 
 		<!-- *** Other dependency versions *** -->
 		<glassfish.jaxb.version>2.3.3</glassfish.jaxb.version>
-		<slf4j.version>1.7.30</slf4j.version>
-		<logback.version>1.1.7</logback.version>
+		<slf4j.version>2.0.17</slf4j.version>
+		<logback.version>1.5.18</logback.version>
 		<vaadin.version.warning>TODO: Remove bootstrap.js in widgetset</vaadin.version.warning>
 		<vaadin.version>8.13.1</vaadin.version>
 		<vaadin.plugin.version>${vaadin.version}</vaadin.plugin.version>
-		<swagger.version>2.1.6</swagger.version>
-		<bouncycastle.version>1.67</bouncycastle.version>
+		<swagger.version>2.2.31</swagger.version>
+		<bouncycastle.version>1.77</bouncycastle.version>
 		<keycloak.version>12.0.4</keycloak.version>
 		<resteasy.version>3.15.1.Final</resteasy.version>
 		<xdocreport.version>2.0.2</xdocreport.version>
@@ -379,7 +381,7 @@
 			<dependency>
 				<groupId>commons-codec</groupId>
 				<artifactId>commons-codec</artifactId>
-				<version>1.15</version>
+				<version>1.18.0</version>
 				<scope>provided</scope>
 			</dependency>
 			<dependency>
@@ -391,7 +393,7 @@
 			<dependency>
 				<groupId>commons-io</groupId>
 				<artifactId>commons-io</artifactId>
-				<version>2.8.0</version>
+				<version>2.17.0</version>
 				<scope>provided</scope>
 			</dependency>
 			<dependency>
@@ -430,33 +432,33 @@
 			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-lang3</artifactId>
-				<version>3.11</version>
+				<version>3.17.0</version>
 				<scope>provided</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-text</artifactId>
-				<version>1.9</version>
+				<version>1.13.0</version>
 				<scope>provided</scope>
 			</dependency>
-
 			<dependency>
 				<groupId>org.bouncycastle</groupId>
-				<artifactId>bcpkix-jdk15on</artifactId>
+				<artifactId>bcpkix-jdk18on</artifactId>
 				<version>${bouncycastle.version}</version>
 				<scope>provided</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.bouncycastle</groupId>
-				<artifactId>bcprov-jdk15on</artifactId>
+				<artifactId>bcprov-jdk18on</artifactId>
 				<version>${bouncycastle.version}</version>
 				<scope>provided</scope>
 			</dependency>
+			
 
 			<dependency>
 				<groupId>org.hibernate</groupId>
 				<artifactId>hibernate-core</artifactId>
-				<version>5.4.25.Final</version>
+				<version>5.6.15.Final</version>
 				<scope>provided</scope>
 				<exclusions>
 					<!-- Exclude Payara modules here -->
@@ -542,7 +544,7 @@
 			<dependency>
 				<groupId>org.postgresql</groupId>
 				<artifactId>postgresql</artifactId>
-				<version>42.2.18</version>
+				<version>42.7.7</version>
 				<scope>provided</scope>
 				<exclusions>
 					<exclusion>
@@ -919,28 +921,32 @@
 
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.8.1</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-resources-plugin</artifactId>
 					<version>3.1.0</version>
 				</plugin>
 
-				<plugin>
+				<!--plugin>
 					<artifactId>maven-javadoc-plugin</artifactId>
 					<version>3.2.0</version>
-					<configuration>
+					<configuration-->
 						<!-- Deactivate javadoc validation (active by default since Java 1.8) -->
-						<additionalJOption>-Xdoclint:none</additionalJOption>
+						<!--additionalJOption>-Xdoclint:none</additionalJOption>
 					</configuration>
-				</plugin>
+				</plugin-->
+				
+				<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <version>3.11.0</version>
+    <configuration>
+        <release>17</release>
+    </configuration>
+</plugin>
 
 				<plugin>
 					<groupId>org.jacoco</groupId>
 					<artifactId>jacoco-maven-plugin</artifactId>
-					<version>0.8.5</version>
+					<version>0.8.12</version>
 					<inherited>true</inherited>
 					<executions>
 						<execution>
@@ -985,7 +991,7 @@
 
 				<plugin>
 					<artifactId>maven-failsafe-plugin</artifactId>
-					<version>2.19.1</version>
+					<version>3.2.5</version>
 					<executions>
 						<execution>
 							<id>integration-test</id>
@@ -1006,13 +1012,15 @@
 
 				<plugin>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>2.22.0</version>
+					<!--version>2.22.0</version-->
+					<version>3.2.5</version>
+
 				</plugin>
 
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-ear-plugin</artifactId>
-					<version>3.0.1</version>
+					<version>3.4.0</version>
 					<configuration>
 						<version>7</version>
 						<defaultLibBundleDir>lib</defaultLibBundleDir>
@@ -1021,7 +1029,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-ejb-plugin</artifactId>
-					<version>3.0.1</version>
+					<version>3.2.1</version>
 					<configuration>
 						<ejbVersion>3.2</ejbVersion>
 					</configuration>
@@ -1029,7 +1037,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-war-plugin</artifactId>
-					<version>3.2.3</version>
+					<version>3.4.0</version>
 					<configuration>
 						<outputFileNameMapping>@{artifactId}@.@{extension}@</outputFileNameMapping>
 						<failOnMissingWebXml>false</failOnMissingWebXml>
@@ -1043,7 +1051,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-jar-plugin</artifactId>
-					<version>3.1.1</version>
+					<version>3.4.2</version>
 					<configuration>
 						<archive>
 							<manifest>
@@ -1097,7 +1105,7 @@
 				<plugin>
 					<groupId>io.openapitools.swagger</groupId>
 					<artifactId>swagger-maven-plugin</artifactId>
-					<version>2.1.2</version>
+					<version>2.2.31</version>
 					<executions>
 						<execution>
 							<goals>
@@ -1247,9 +1255,7 @@
 			<activation>
 				<activeByDefault>false</activeByDefault>
 			</activation>
-			<modules>
-				<module>../sormas-keycloak-service-provider</module>
-			</modules>
+
 		</profile>
 
 		<profile>
@@ -1333,14 +1339,11 @@
 	</profiles>
 
 	<modules>
-		<module>../sormas-widgetset</module>
 		<module>../sormas-api</module>
 		<module>../sormas-backend</module>
 		<module>../sormas-ear</module>
 		<module>../sormas-rest</module>
-		<module>../sormas-ui</module>
 		<module>./dependencies/serverlibs.pom</module>
-		<module>../sormas-cargoserver</module>
 		<module>../apmis-flow</module>
 	</modules>
 </project>

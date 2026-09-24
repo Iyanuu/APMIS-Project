@@ -30,6 +30,14 @@ public class CampaignFormElement implements Serializable {
 	public static final String DEFAULTVALUE = "defaultvalue";
 	public static final String EXPRESSIONZEROBEHAVIOUR = "expressionZeroBehavior";
 	public static final String HINT = "hint";
+	public static final String IMAGE_ALLOWED_FORMATS = "imageAllowedFormats";
+	public static final String IMAGE_MAX_COUNT = "imageMaxCount";
+	public static final String IMAGE_MULTIPLE = "imageMultiple";
+	public static final String IMAGE_MAX_UPLOAD_SIZE_MB = "imageMaxUploadSizeMb";
+	public static final String IMAGE_TARGET_WIDTH = "imageTargetWidth";
+	public static final String IMAGE_TARGET_HEIGHT = "imageTargetHeight";
+	public static final String IMAGE_JPEG_QUALITY = "imageJpegQuality";
+	public static final String IMAGE_CAMERA_ONLY_MOBILE = "imageCameraOnlyMobile";
 
 
 	private static final long serialVersionUID = 5553496750859734167L;
@@ -42,7 +50,7 @@ public class CampaignFormElement implements Serializable {
 			CampaignFormElementType.RADIOBASIC.toString(), CampaignFormElementType.DECIMAL.toString(),
 			CampaignFormElementType.DATE.toString(), CampaignFormElementType.CHECKBOXBASIC.toString(),
 			CampaignFormElementType.RANGE.toString(), CampaignFormElementType.EMAIL.toString(), CampaignFormElementType.PHONE.toString(), CampaignFormElementType.EMAIL.toString(), CampaignFormElementType.ARRAY.toString() 
-			, CampaignFormElementType.DAYWISE.toString()};
+			, CampaignFormElementType.DAYWISE.toString(), CampaignFormElementType.IMAGE.toString()};
 
 	public static final String[] VALID_STYLES = { CampaignFormElementStyle.INLINE.toString(),
 			CampaignFormElementStyle.ROW.toString(), CampaignFormElementStyle.FIRST.toString(),
@@ -80,6 +88,14 @@ public class CampaignFormElement implements Serializable {
 	private String expressionZeroBehavior;
 	@Size(max = CHARACTER_LIMIT_DEFAULT, message = Validations.textTooLong)
 	private String hint;
+	private String[] imageAllowedFormats;
+	private Integer imageMaxCount;
+	private Boolean imageMultiple;
+	private Integer imageMaxUploadSizeMb;
+	private Integer imageTargetWidth;
+	private Integer imageTargetHeight;
+	private Integer imageJpegQuality;
+	private Boolean imageCameraOnlyMobile;
 	
 	public String getType() {
 		return type;
@@ -242,6 +258,70 @@ public class CampaignFormElement implements Serializable {
 		this.hint = hint;
 	}
 
+	public String[] getImageAllowedFormats() {
+		return imageAllowedFormats;
+	}
+
+	public void setImageAllowedFormats(String[] imageAllowedFormats) {
+		this.imageAllowedFormats = imageAllowedFormats;
+	}
+
+	public Integer getImageMaxCount() {
+		return imageMaxCount;
+	}
+
+	public void setImageMaxCount(Integer imageMaxCount) {
+		this.imageMaxCount = imageMaxCount;
+	}
+
+	public Boolean getImageMultiple() {
+		return imageMultiple;
+	}
+
+	public void setImageMultiple(Boolean imageMultiple) {
+		this.imageMultiple = imageMultiple;
+	}
+
+	public Integer getImageMaxUploadSizeMb() {
+		return imageMaxUploadSizeMb;
+	}
+
+	public void setImageMaxUploadSizeMb(Integer imageMaxUploadSizeMb) {
+		this.imageMaxUploadSizeMb = imageMaxUploadSizeMb;
+	}
+
+	public Integer getImageTargetWidth() {
+		return imageTargetWidth;
+	}
+
+	public void setImageTargetWidth(Integer imageTargetWidth) {
+		this.imageTargetWidth = imageTargetWidth;
+	}
+
+	public Integer getImageTargetHeight() {
+		return imageTargetHeight;
+	}
+
+	public void setImageTargetHeight(Integer imageTargetHeight) {
+		this.imageTargetHeight = imageTargetHeight;
+	}
+
+	public Integer getImageJpegQuality() {
+		return imageJpegQuality;
+	}
+
+	public void setImageJpegQuality(Integer imageJpegQuality) {
+		this.imageJpegQuality = imageJpegQuality;
+	}
+
+	public Boolean getImageCameraOnlyMobile() {
+		return imageCameraOnlyMobile;
+	}
+
+	public void setImageCameraOnlyMobile(Boolean imageCameraOnlyMobile) {
+		this.imageCameraOnlyMobile = imageCameraOnlyMobile;
+	}
+
 	/**
 	 * Needed. Otherwise hibernate will persist whenever loading, because hibernate
 	 * types creates new instances that aren't equal.
@@ -266,16 +346,27 @@ public class CampaignFormElement implements Serializable {
 				&& Objects.equals(comment, that.comment)
 				&& Objects.equals(defaultvalue, that.defaultvalue)
 				&& Objects.equals(expressionZeroBehavior, that.expressionZeroBehavior)
-				&& Objects.equals(hint, that.hint);
+				&& Objects.equals(hint, that.hint)
+				&& Arrays.equals(imageAllowedFormats, that.imageAllowedFormats)
+				&& Objects.equals(imageMaxCount, that.imageMaxCount)
+				&& Objects.equals(imageMultiple, that.imageMultiple)
+				&& Objects.equals(imageMaxUploadSizeMb, that.imageMaxUploadSizeMb)
+				&& Objects.equals(imageTargetWidth, that.imageTargetWidth)
+				&& Objects.equals(imageTargetHeight, that.imageTargetHeight)
+				&& Objects.equals(imageJpegQuality, that.imageJpegQuality)
+				&& Objects.equals(imageCameraOnlyMobile, that.imageCameraOnlyMobile);
 	}
 
 	@Override
 	public int hashCode() {
-		int result = Objects.hash(type, id, caption, expression, dependingOn, important, warnonerror, errormessage, comment, defaultvalue, ignoredisable, expressionZeroBehavior, hint);
+		int result = Objects.hash(type, id, caption, expression, dependingOn, important, warnonerror, errormessage, comment,
+				defaultvalue, ignoredisable, expressionZeroBehavior, hint, imageMaxCount, imageMultiple,
+				imageMaxUploadSizeMb, imageTargetWidth, imageTargetHeight, imageJpegQuality, imageCameraOnlyMobile);
 		result = 31 * result + Arrays.hashCode(styles);
 	//	result = 31 * result + Arrays.hashCode(options);
 		result = 31 * result + Arrays.hashCode(constraints);
 		result = 31 * result + Arrays.hashCode(dependingOnValues);
+		result = 31 * result + Arrays.hashCode(imageAllowedFormats);
 		return result;
 	}
 }

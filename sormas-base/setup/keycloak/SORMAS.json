@@ -316,7 +316,7 @@
       "security-admin-console": [],
       "admin-cli": [],
       "sormas-app": [],
-      "sormas-ui": [],
+      "apmis-flow": [],
       "account-console": [],
       "broker": [
         {
@@ -1003,15 +1003,15 @@
     },
     {
       "id": "818e39a2-a344-4d98-a330-de92291372a8",
-      "clientId": "sormas-ui",
+      "clientId": "apmis-flow",
       "rootUrl": "https://${SORMAS_SERVER_URL}",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "${KEYCLOAK_SORMAS_UI_SECRET}",
+      "secret": "${KEYCLOAK_APMIS_FLOW_SECRET}",
       "redirectUris": [
-        "/sormas-ui/*"
+        "/apmis-flow/*"
       ],
       "webOrigins": [],
       "notBefore": 0,

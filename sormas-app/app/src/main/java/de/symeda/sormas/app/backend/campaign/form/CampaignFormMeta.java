@@ -45,7 +45,9 @@ public class CampaignFormMeta extends PseudonymizableAdo {
 	public static final String FORM_CATEGORY = "formCategory";
 	public static final String CAMPAIGN_FORM_ELEMENTS = "campaignFormElements";
 	public static final String CAMPAIGN_FORM_TRANSLATIONS = "campaignFormTranslations";
-	public static final String DISTRICTENTRY = "districtentry";
+
+	public static final String GEOGRAPHYLEVEL = "geographylevel";
+
 
 
 
@@ -55,6 +57,9 @@ public class CampaignFormMeta extends PseudonymizableAdo {
 
 	@Column(length = CHARACTER_LIMIT_DEFAULT)
 	private String formName;
+
+	@Column(name = "geographylevel")
+	private String geographylevel;
 
 	@Column(name = "formCategory")
 	private String formCategory;
@@ -70,8 +75,6 @@ public class CampaignFormMeta extends PseudonymizableAdo {
 	private String campaignFormTranslationsJson;
 	private List<CampaignFormTranslations> campaignFormTranslations;
 
-	@Column(name = "districtentry")
-	private boolean districtentry;
 
 	public String getFormId() {
 		return formId;
@@ -102,6 +105,14 @@ public class CampaignFormMeta extends PseudonymizableAdo {
 	}
 	public void setFormCategory(String formCategory) {
 		this.formCategory = formCategory;
+	}
+
+	public String getGeographylevel() {
+		return geographylevel;
+	}
+
+	public void setGeographylevel(String geographylevel) {
+		this.geographylevel = geographylevel;
 	}
 
 	public String getCampaignFormElementsJson() {
@@ -162,13 +173,6 @@ public class CampaignFormMeta extends PseudonymizableAdo {
 		campaignFormTranslationsJson = gson.toJson(campaignFormTranslations);
 	}
 
-	public boolean isDistrictentry() {
-		return districtentry;
-	}
-
-	public void setDistrictentry(boolean districtentry) {
-		this.districtentry = districtentry;
-	}
 
 	@Override
 	public String getI18nPrefix() {

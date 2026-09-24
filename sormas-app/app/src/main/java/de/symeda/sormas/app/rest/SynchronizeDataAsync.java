@@ -48,6 +48,7 @@ import de.symeda.sormas.app.backend.common.DatabaseHelper;
 import de.symeda.sormas.app.backend.config.ConfigProvider;
 import de.symeda.sormas.app.backend.device.errorLog.DeviceErrorLogDtoHelper;
 import de.symeda.sormas.app.backend.device.info.DeviceInfoDtoHelper;
+import de.symeda.sormas.app.backend.document.DocumentDtoHelper;
 import de.symeda.sormas.app.backend.feature.FeatureConfigurationDtoHelper;
 import de.symeda.sormas.app.backend.infrastructure.InfrastructureHelper;
 import de.symeda.sormas.app.backend.region.AreaDtoHelper;
@@ -273,85 +274,11 @@ public class SynchronizeDataAsync extends AsyncTask<Void, Void, Void> {
 	public static boolean hasAnyUnsynchronizedData() {
 		final boolean hasUnsynchronizedCampaignData = !DatabaseHelper.getFeatureConfigurationDao().isFeatureDisabled(FeatureType.CAMPAIGNS)
 			&& (DatabaseHelper.getCampaignFormDataDao().isAnyModified());
-		return hasUnsynchronizedCampaignData ||   DatabaseHelper.getDeviceErrorLogDao().isAnyModified();
+		return hasUnsynchronizedCampaignData || DatabaseHelper.getDeviceErrorLogDao().isAnyModified();
 	}
 
 	@AddTrace(name = "synchronizeChangedDataTrace")
 	private void synchronizeChangedData() throws DaoException, NoConnectionException, ServerConnectionException, ServerCommunicationException {
-//		PersonDtoHelper personDtoHelper = new PersonDtoHelper();
-//		CaseDtoHelper caseDtoHelper = new CaseDtoHelper();
-//		ImmunizationDtoHelper immunizationDtoHelper = new ImmunizationDtoHelper();
-//		EventDtoHelper eventDtoHelper = new EventDtoHelper();
-//		EventParticipantDtoHelper eventParticipantDtoHelper = new EventParticipantDtoHelper();
-//		SampleDtoHelper sampleDtoHelper = new SampleDtoHelper();
-//		PathogenTestDtoHelper pathogenTestDtoHelper = new PathogenTestDtoHelper();
-//		AdditionalTestDtoHelper additionalTestDtoHelper = new AdditionalTestDtoHelper();
-//		ContactDtoHelper contactDtoHelper = new ContactDtoHelper();
-//		VisitDtoHelper visitDtoHelper = new VisitDtoHelper();
-//		TaskDtoHelper taskDtoHelper = new TaskDtoHelper();
-//		WeeklyReportDtoHelper weeklyReportDtoHelper = new WeeklyReportDtoHelper();
-//		AggregateReportDtoHelper aggregateReportDtoHelper = new AggregateReportDtoHelper();
-//		PrescriptionDtoHelper prescriptionDtoHelper = new PrescriptionDtoHelper();
-//		TreatmentDtoHelper treatmentDtoHelper = new TreatmentDtoHelper();
-//		ClinicalVisitDtoHelper clinicalVisitDtoHelper = new ClinicalVisitDtoHelper();
-//
-//		// order is important, due to dependencies (e.g. case & person)
-//
-//		new OutbreakDtoHelper().pullEntities(false);
-//		new DiseaseConfigurationDtoHelper().pullEntities(false);
-//		new CustomizableEnumValueDtoHelper().pullEntities(false);
-//
-//		boolean personsNeedPull = personDtoHelper.pullAndPushEntities();
-//		boolean casesNeedPull = caseDtoHelper.pullAndPushEntities();
-//		boolean immunizationsNeedPull = immunizationDtoHelper.pullAndPushEntities();
-//		boolean eventsNeedPull = eventDtoHelper.pullAndPushEntities();
-//		boolean eventParticipantsNeedPull = eventParticipantDtoHelper.pullAndPushEntities();
-//		boolean samplesNeedPull = sampleDtoHelper.pullAndPushEntities();
-//		boolean sampleTestsNeedPull = pathogenTestDtoHelper.pullAndPushEntities();
-//		boolean additionalTestsNeedPull = additionalTestDtoHelper.pullAndPushEntities();
-//		boolean contactsNeedPull = contactDtoHelper.pullAndPushEntities();
-//		boolean visitsNeedPull = visitDtoHelper.pullAndPushEntities();
-//		boolean tasksNeedPull = taskDtoHelper.pullAndPushEntities();
-//		boolean weeklyReportsNeedPull = weeklyReportDtoHelper.pullAndPushEntities();
-//		boolean aggregateReportsNeedPull = aggregateReportDtoHelper.pullAndPushEntities();
-//		boolean prescriptionsNeedPull = prescriptionDtoHelper.pullAndPushEntities();
-//		boolean treatmentsNeedPull = treatmentDtoHelper.pullAndPushEntities();
-//		boolean clinicalVisitsNeedPull = clinicalVisitDtoHelper.pullAndPushEntities();
-//
-//		casesNeedPull |= clinicalVisitsNeedPull;
-//
-//		if (personsNeedPull)
-//			personDtoHelper.pullEntities(true);
-//		if (casesNeedPull)
-//			caseDtoHelper.pullEntities(true);
-//		if (immunizationsNeedPull)
-//			immunizationDtoHelper.pullEntities(true);
-//		if (eventsNeedPull)
-//			eventDtoHelper.pullEntities(true);
-//		if (eventParticipantsNeedPull)
-//			eventParticipantDtoHelper.pullEntities(true);
-//		if (samplesNeedPull)
-//			sampleDtoHelper.pullEntities(true);
-//		if (sampleTestsNeedPull)
-//			pathogenTestDtoHelper.pullEntities(true);
-//		if (additionalTestsNeedPull)
-//			additionalTestDtoHelper.pullEntities(true);
-//		if (contactsNeedPull)
-//			contactDtoHelper.pullEntities(true);
-//		if (visitsNeedPull)
-//			visitDtoHelper.pullEntities(true);
-//		if (tasksNeedPull)
-//			taskDtoHelper.pullEntities(true);
-//		if (weeklyReportsNeedPull)
-//			weeklyReportDtoHelper.pullEntities(true);
-//		if (aggregateReportsNeedPull)
-//			aggregateReportDtoHelper.pullEntities(true);
-//		if (prescriptionsNeedPull)
-//			prescriptionDtoHelper.pullEntities(true);
-//		if (treatmentsNeedPull)
-//			treatmentDtoHelper.pullEntities(true);
-//		if (clinicalVisitsNeedPull)
-//			clinicalVisitDtoHelper.pullEntities(true);
 
 		// Campaigns
 		if (!DatabaseHelper.getFeatureConfigurationDao().isFeatureDisabled(FeatureType.CAMPAIGNS)) {
@@ -636,6 +563,10 @@ if (1 == 3) {
 		// CampaignData
 		if (!DatabaseHelper.getFeatureConfigurationDao().isFeatureDisabled(FeatureType.CAMPAIGNS)) {
 
+			// Push documents before campaign form data: form values reference imageId (document uuid).
+			final DocumentDtoHelper documentDtoHelper = new DocumentDtoHelper();
+			documentDtoHelper.pushEntities(true);
+
 			final CampaignFormDataDtoHelper campaignFormDataDtoHelper = new CampaignFormDataDtoHelper();
 			campaignFormDataDtoHelper.pushEntities(true);
 			final List<String> campaignFormDataUuids = executeUuidCall(RetroProvider.getCampaignFormDataFacade().pullUuids());
@@ -679,6 +610,9 @@ if (1 == 3) {
 	public  void syncDeviceInfoAndErrorLogsOnlyStatic() throws DaoException, NoConnectionException, ServerConnectionException, ServerCommunicationException {
 		Log.d(SynchronizeDataAsync.class.getSimpleName(), "syncDeviceInfoAndErrorLogsOnlyTrace");
 
+
+			final DocumentDtoHelper documentDtoHelper = new DocumentDtoHelper();
+			documentDtoHelper.pushEntities(true);
 
 			final CampaignFormDataDtoHelper campaignFormDataDtoHelper = new CampaignFormDataDtoHelper();
 			campaignFormDataDtoHelper.pushEntities(true);

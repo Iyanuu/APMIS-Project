@@ -105,6 +105,9 @@ import de.symeda.sormas.backend.util.QueryHelper;
 @Stateless(name = "CampaignFormMetaFacade")
 public class CampaignFormMetaFacadeEjb implements CampaignFormMetaFacade {
 
+	private static final Set<String> VALID_IMAGE_FORMATS = new HashSet<>(
+			Arrays.asList("jpg", "jpeg", "png", "webp"));
+
 	@PersistenceContext(unitName = ModelConstants.PERSISTENCE_UNIT_NAME)
 	private EntityManager em;
 
@@ -141,7 +144,7 @@ public class CampaignFormMetaFacadeEjb implements CampaignFormMetaFacade {
 		target.setCampaignFormElements(source.getCampaignFormElements());
 		target.setCampaignFormTranslations(source.getCampaignFormTranslations());
 		target.setDaysExpired(source.getDaysExpired());
-		target.setDistrictentry(source.isDistrictentry());
+		target.setGeographyLevel(source.getGeographyLevel());
 		target.setFormversion(source.getFormversion());
 		target.setFormGroupUuid(source.getFormGroupUuid());
 
@@ -201,9 +204,14 @@ public class CampaignFormMetaFacadeEjb implements CampaignFormMetaFacade {
 		target.setFormname_ps_af(source.getFormname_ps_af());
 		target.setFormname_fa_af(source.getFormname_fa_af());
 		if (source.getModality() != null)
-			target.setModality(source.getModality().equals(Modality.S2S.toString()) ? Modality.S2S
+			target.setModality(
+					source.getModality().equals(Modality.S2S.toString()) ? Modality.S2S
 					: source.getModality().equals(Modality.HF2HF.toString()) ? Modality.HF2HF
-							: source.getModality().equals(Modality.M2M.toString()) ? Modality.M2M : Modality.H2H);
+							: source.getModality().equals(Modality.M2M.toString()) ? Modality.M2M
+									: source.getModality().equals(Modality.Mixed.toString()) ? Modality.Mixed 
+											: source.getModality().equals(Modality.M2MS2S.toString()) ? Modality.M2MS2S 
+													: source.getModality().equals(Modality.GENERAL.toString()) ? Modality.GENERAL 
+													: Modality.H2H);
 		target.setFormCategory(source.getFormCategory());
 		if (source.getArea() != null) {
 			target.setArea(AreaFacadeEjb.toReferenceDto(source.getArea()));
@@ -212,7 +220,7 @@ public class CampaignFormMetaFacadeEjb implements CampaignFormMetaFacade {
 		target.setCampaignFormElements(source.getCampaignFormElements());
 		target.setCampaignFormTranslations(source.getCampaignFormTranslations());
 		target.setDaysExpired(source.getDaysExpired());
-		target.setDistrictentry(source.isDistrictentry());
+		target.setGeographyLevel(source.getGeographyLevel());
 		target.setFormversion(source.getFormversion());
 		target.setFormGroupUuid(source.getFormGroupUuid());
 
@@ -586,8 +594,8 @@ public class CampaignFormMetaFacadeEjb implements CampaignFormMetaFacade {
 				case CampaignFormMeta.DAYSTOEXPIRE:
 					expression = campaignFormMeta.get(CampaignFormMeta.DAYSTOEXPIRE);
 					break;
-				case CampaignFormMeta.DISTRICTENTRY:
-					expression = campaignFormMeta.get(CampaignFormMeta.DISTRICTENTRY);
+				case CampaignFormMeta.GEOGRAPHYLEVEL:
+					expression = campaignFormMeta.get(CampaignFormMeta.GEOGRAPHYLEVEL);
 					break;
 				case CampaignFormMeta.FORM_TYPE:
 					expression = campaignFormMeta.get(CampaignFormMeta.FORM_TYPE);
@@ -767,6 +775,7 @@ public class CampaignFormMetaFacadeEjb implements CampaignFormMetaFacade {
 			// Validate form elements
 //			validateCampaignFormElementType(element.getId(), element.getType());
 			validateCampaignFormElementStyles(element.getId(), element.getStyles());
+			validateCampaignFormImageConfiguration(element);
 			if (StringUtils.isNotBlank(element.getDependingOn())
 					&& ArrayUtils.isEmpty(element.getDependingOnValues())) {
 				throw new ValidationRuntimeException(I18nProperties
@@ -813,6 +822,58 @@ public class CampaignFormMetaFacadeEjb implements CampaignFormMetaFacade {
 			if (!StringUtils.equalsAny(style, CampaignFormElement.VALID_STYLES)) {
 				throw new ValidationRuntimeException(
 						I18nProperties.getValidationError(Validations.campaignFormUnsupportedStyle, style, id));
+			}
+		}
+	}
+
+	private void validateCampaignFormImageConfiguration(CampaignFormElement element) {
+		if (!StringUtils.equals(element.getType(), CampaignFormElementType.IMAGE.toString())) {
+			return;
+		}
+
+		String elementId = StringUtils.defaultIfBlank(element.getId(), "<unknown>");
+		Integer imageMaxCount = element.getImageMaxCount();
+		if (imageMaxCount != null && (imageMaxCount < 1 || imageMaxCount > 5)) {
+			throw new ValidationRuntimeException(
+					"Image field '" + elementId + "' has invalid imageMaxCount. Allowed range is 1-5.");
+		}
+
+		if (Boolean.FALSE.equals(element.getImageMultiple()) && imageMaxCount != null && imageMaxCount > 1) {
+			throw new ValidationRuntimeException(
+					"Image field '" + elementId + "' has imageMultiple=false but imageMaxCount > 1.");
+		}
+
+		Integer imageMaxUploadSizeMb = element.getImageMaxUploadSizeMb();
+		if (imageMaxUploadSizeMb != null && imageMaxUploadSizeMb < 1) {
+			throw new ValidationRuntimeException(
+					"Image field '" + elementId + "' has invalid imageMaxUploadSizeMb. It must be >= 1.");
+		}
+
+		Integer imageTargetWidth = element.getImageTargetWidth();
+		if (imageTargetWidth != null && imageTargetWidth < 1) {
+			throw new ValidationRuntimeException(
+					"Image field '" + elementId + "' has invalid imageTargetWidth. It must be >= 1.");
+		}
+
+		Integer imageTargetHeight = element.getImageTargetHeight();
+		if (imageTargetHeight != null && imageTargetHeight < 1) {
+			throw new ValidationRuntimeException(
+					"Image field '" + elementId + "' has invalid imageTargetHeight. It must be >= 1.");
+		}
+
+		Integer imageJpegQuality = element.getImageJpegQuality();
+		if (imageJpegQuality != null && (imageJpegQuality < 1 || imageJpegQuality > 100)) {
+			throw new ValidationRuntimeException(
+					"Image field '" + elementId + "' has invalid imageJpegQuality. Allowed range is 1-100.");
+		}
+
+		if (ArrayUtils.isNotEmpty(element.getImageAllowedFormats())) {
+			for (String format : element.getImageAllowedFormats()) {
+				String normalizedFormat = StringUtils.trimToEmpty(format).toLowerCase();
+				if (!VALID_IMAGE_FORMATS.contains(normalizedFormat)) {
+					throw new ValidationRuntimeException("Image field '" + elementId
+							+ "' has unsupported format '" + format + "'. Allowed formats: jpg, jpeg, png, webp.");
+				}
 			}
 		}
 	}

@@ -93,7 +93,7 @@ public class CampaignFormMetaDialog extends FormDialog {
         // TODO
         // Think of a way to make this Enum so if it changes from sormas api you dont need to make changes here
         // and code wont break in production because of it
-        List<String> preCampaignsCategories = List.of("FLW", "MODALITY_PRE", "TRAINING");
+        List<String> preCampaignsCategories = List.of("FLW", "MODALITY_PRE", "TRAINING", "MONITORING");
         List<String> intraCampaignsCategories = List.of("ICM", "ADMIN", "EAG-ICM", "EAG-ADMIN");
         List<String> postCampaignsCategories = List.of("PCA", "FMS", "LQAS", "EAG-PCA", "EAG-FMS", "EAG-LQAS", "MODALITY_POST", "VALIDATION");
 

@@ -42,6 +42,8 @@ public class CampaignTreeGridDto {
     private Long populationData;
     private Long populationData5_10;
     private Long populationData4_23M;
+    private Long populationData4_59M;
+
     
     
     public CampaignTreeGridDto(String name, Long id, String parentUuid, String uuid, String levelAssessed) {
@@ -152,10 +154,6 @@ public class CampaignTreeGridDto {
     	clusterData.add(clusterData_sub);
     }
 
-    
-    
-    
-    
     public void setPopulationData(Long populationData) {
 		this.populationData = populationData;
 	}
@@ -167,43 +165,33 @@ public class CampaignTreeGridDto {
 	public void setPopulationData4_23M(Long populationData4_23M) {
 		this.populationData4_23M = populationData4_23M;
 	}
-
-//	public Long getPopulationData() {
-//        return getRegionData().stream()
-//                .map(region -> region.getPopulationData())
-//                .reduce(0L, Long::sum);
-//    }
+	
+	public void setPopulationData4_59M(Long populationData4_59M) {
+		this.populationData4_59M = populationData4_59M;
+	}
 	
 	public Long getPopulationData() {
 	    return populationData;
 	}
-    
-//    public Long getPopulationData5_10() {
-//        return getRegionData().stream()
-//                .map(region -> region.getPopulationData5_10())
-//                .reduce(0L, Long::sum);
-//    }
-	
+    	
 	public Long getPopulationData5_10() {
 	    return populationData5_10;
 	}
-    
-//    public Long getPopulationData4_23M() {
-//        return getRegionData().stream()
-//                .map(region -> region.getPopulationData4_23M())
-//                .reduce(0L, Long::sum);
-//    }
 	
 	public Long getPopulationData4_23M() {
 	    return populationData4_23M;
 	}
-    
+	
+	public Long getPopulationData4_59M() {
+	    return populationData4_59M;
+	}    
     
     public Long getPopulationDataTotal() {
         return getRegionData().stream()
                 .mapToLong(region -> (region.getPopulationData5_10() != null ? region.getPopulationData5_10() : 0) 
                 		+ (region.getPopulationData() != null ? region.getPopulationData() : 0)
-            	+ (region.getPopulationData4_23M() != null ? region.getPopulationData4_23M() : 0))
+            	+ (region.getPopulationData4_23M() != null ? region.getPopulationData4_23M() : 0)
+            	+ (region.getPopulationData4_59M() != null ? region.getPopulationData4_59M() : 0))
                 .reduce(Long::sum)
                 .orElse(0L);
     }
@@ -276,8 +264,6 @@ public class CampaignTreeGridDto {
 	public void setDistrictStatus(String districtStatus) {
 		this.districtStatus = districtStatus;
 	}
-
-	
 	
 	public String getFloatStatus() {
 		return floatStatus;
@@ -302,13 +288,6 @@ public class CampaignTreeGridDto {
 	public void setSelected(Boolean selected) {
 		this.selected = selected;
 	}
-	
-	
-	
-	
-	
-	
-	
-
     
 }
+

@@ -375,6 +375,25 @@ public class BaseAdoService<ADO extends AbstractDomainObject> implements AdoServ
 		}
 		em.flush();
 	}
+	
+	@Override
+	public void ensurePersistedAll(List<ADO> ados) throws EntityExistsException {
+
+		if (ados == null || ados.isEmpty()) {
+			return;
+		}
+
+		for (ADO ado : ados) {
+			if (ado.getId() == null) {
+				em.persist(ado);
+			} else if (!em.contains(ado)) {
+				throw new EntityExistsException(
+						"Das Entity ist nicht attacht: " + getElementClass().getSimpleName() + "#" + ado.getUuid());
+			}
+		}
+
+		em.flush();
+	}
 
 	@Override
 	public void persist(ADO persistme) {

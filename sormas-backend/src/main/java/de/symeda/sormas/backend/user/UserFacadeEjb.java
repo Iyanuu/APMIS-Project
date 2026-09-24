@@ -29,7 +29,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.ejb.EJB;
@@ -53,6 +55,7 @@ import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.ValidationException;
 import javax.validation.constraints.NotNull;
@@ -529,6 +532,72 @@ public class UserFacadeEjb implements UserFacade {
 		return toDto(user);
 	}
 
+	
+	@Override
+	@Transactional
+	public List<UserDto> saveUsers(@Valid List<UserDto> dtos) {
+
+	    if (dtos.isEmpty()) {
+	        return Collections.emptyList();
+	    }
+
+	    // 1. Bulk-fetch existing users in a single query instead of N calls to getByUuid()
+	    Set<String> uuidsToFetch = dtos.stream()
+	            .filter(d -> d.getCreationDate() != null)
+	            .map(UserDto::getUuid)
+	            .collect(Collectors.toSet());
+	    
+	    List<String> uuidsToList = new ArrayList<>(uuidsToFetch);
+
+	    Map<String, User> existingByUuid = uuidsToFetch.isEmpty()
+	            ? Collections.emptyMap()
+	            : userService.getByUuids(uuidsToList).stream()
+	                    .collect(Collectors.toMap(User::getUuid, Function.identity()));
+
+	    // 2. Build entities, carry over changeDate for updates, validate up front (fail fast)
+	    List<User> usersToPersist = new ArrayList<>(dtos.size());
+	    List<UserRole> pendingCreateEvents = null; // placeholder if you need typed lists later
+	    List<User> createdUsers = new ArrayList<>();
+	    List<Map.Entry<User, User>> updatedPairs = new ArrayList<>(); // old -> new
+
+	    for (UserDto dto : dtos) {
+	        User oldUser = dto.getCreationDate() != null ? existingByUuid.get(dto.getUuid()) : null;
+
+	        if (oldUser != null) {
+	            // Only carry the one field the original code actually needed —
+	            // no reflective full-bean clone required.
+	            dto.setChangeDate(oldUser.getChangeDate());
+	        }
+
+	        User user = fromDto(dto, true);
+
+	        try {
+	            UserRole.validate(user.getUserRoles());
+	        } catch (UserRoleValidationException e) {
+	            throw new ValidationException(e); // fail the whole batch before any writes
+	        }
+
+	        usersToPersist.add(user);
+
+	        if (oldUser == null) {
+	            createdUsers.add(user);
+	        } else {
+	            updatedPairs.add(Map.entry(oldUser, user));
+	        }
+	    }
+
+	    userService.ensurePersistedAll(usersToPersist);
+
+	    // 4. Fire events only after successful persistence
+	    createdUsers.forEach(u -> userCreateEvent.fire(new UserCreateEvent(u)));
+	    updatedPairs.forEach(p -> userUpdateEvent.fire(new UserUpdateEvent(p.getKey(), p.getValue())));
+
+	    // 5. Map back to DTOs
+	    return usersToPersist.stream()
+	            .map(UserFacadeEjb::toDto)
+	            .collect(Collectors.toList());
+	}
+	
 	@Override
 	public UserActivitySummaryDto saveUserActivitySummary(UserActivitySummaryDto userActivitySummaryDto) {
 		userActivitySummaryDto.setCreatingUser(userServiceEBJ.getCurrentUser());

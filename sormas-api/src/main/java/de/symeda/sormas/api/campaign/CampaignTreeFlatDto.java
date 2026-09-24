@@ -27,7 +27,7 @@ public class CampaignTreeFlatDto implements Serializable {
     public String  clusterModality, clusterFloating, clusterStatus;
 
     // Population
-    public Long pop0_4, pop5_10, pop4_23m;
+    public Long pop0_4, pop5_10, pop4_23m, pop4_59m;
 
     public CampaignTreeFlatDto(Object[] r) {
         if (r == null) {
@@ -58,6 +58,8 @@ public class CampaignTreeFlatDto implements Serializable {
         pop0_4           = bigInt(r, i++);
         pop5_10          = bigInt(r, i++);
         pop4_23m         = bigInt(r, i++);
+        pop4_59m         = bigInt(r, i++);
+
     }
 
     // ── Null-safe helpers ────────────────────────────────────────────────────

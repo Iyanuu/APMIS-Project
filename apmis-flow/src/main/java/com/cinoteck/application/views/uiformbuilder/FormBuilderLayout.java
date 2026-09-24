@@ -47,6 +47,7 @@ import de.symeda.sormas.api.campaign.CampaignPhase;
 import de.symeda.sormas.api.campaign.CampaignReferenceDto;
 import de.symeda.sormas.api.campaign.form.CampaignFormElement;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaDto;
+import de.symeda.sormas.api.campaign.form.CampaignFormMetaGeographyLevel;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaReferenceDto;
 import de.symeda.sormas.api.infrastructure.area.AreaReferenceDto;
 import de.symeda.sormas.api.messaging.MessageDto;
@@ -69,7 +70,7 @@ public class FormBuilderLayout extends VerticalLayout {
 	MultiSelectComboBox<AreaReferenceDto> areaSelector;
 	ComboBox<Modality> modality;
 	IntegerField daysExpired;
-	ComboBox<Boolean> districtEntry;
+	ComboBox<CampaignFormMetaGeographyLevel> geographyLevel;
 	ComboBox<String> languageCode;
 	List<AreaReferenceDto> regions = FacadeProvider.getAreaFacade().getAllActiveAsReference();
 
@@ -133,8 +134,8 @@ public class FormBuilderLayout extends VerticalLayout {
 		modality = new ComboBox<Modality>("Modality");
 		modality.setItems(Modality.values());
 		daysExpired = new IntegerField("Days Expired");
-		districtEntry = new ComboBox<Boolean>("District Entry");
-		districtEntry.setItems(true, false);
+		geographyLevel = new ComboBox<CampaignFormMetaGeographyLevel>("Geography Level");
+		geographyLevel.setItems(CampaignFormMetaGeographyLevel.values());
 		languageCode = new ComboBox<String>("Language Code");
 		languageCode.setItems("en", "fa_AF", "ps_AF");
 
@@ -158,14 +159,14 @@ public class FormBuilderLayout extends VerticalLayout {
 		binder.forField(daysExpired).asRequired("Days Expired is Required").bind(CampaignFormMetaDto::getDaysExpired,
 				CampaignFormMetaDto::setDaysExpired);
 
-		binder.forField(districtEntry).asRequired("District Entry is Required")
-				.bind(CampaignFormMetaDto::isDistrictentry, CampaignFormMetaDto::setDistrictentry);
+		binder.forField(geographyLevel).asRequired("Geography Level is Required")
+				.bind(CampaignFormMetaDto::getGeographyLevel, CampaignFormMetaDto::setGeographyLevel);
 
 		binder.forField(languageCode).asRequired("Language Code is Required").bind(CampaignFormMetaDto::getLanguageCode,
 				CampaignFormMetaDto::setLanguageCode);
 
 		formLayout.add(formBasics, formName, formId, formType, formCategory, areaSelector, modality, daysExpired,
-				languageCode, districtEntry);
+				languageCode, geographyLevel);
 
 		formLayout.setColspan(formBasics, 2);
 

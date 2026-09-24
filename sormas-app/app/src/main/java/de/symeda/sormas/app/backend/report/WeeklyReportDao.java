@@ -117,12 +117,15 @@ public class WeeklyReportDao extends AbstractAdoDao<WeeklyReport> {
 		report.setReportDateTime(new Date());
 		User currentUser = ConfigProvider.getUser();
 		report.setReportingUser(currentUser);
-		report.setHealthFacility(currentUser.getHealthFacility());
-		report.setCommunity(currentUser.getCommunity());
+		if (currentUser != null) {
+			report.setHealthFacility(currentUser.getHealthFacility());
+			report.setCommunity(currentUser.getCommunity());
+			report.setAssignedOfficer(currentUser.getAssociatedOfficer());
+			report.setDistrict(currentUser.getDistrict());
+		}
+
 		report.setYear(epiWeek.getYear());
 		report.setEpiWeek(epiWeek.getWeek());
-		report.setAssignedOfficer(currentUser.getAssociatedOfficer());
-		report.setDistrict(currentUser.getDistrict());
 
 		int totalNumberOfCases = DatabaseHelper.getCaseDao().getNumberOfCasesForEpiWeek(epiWeek, currentUser);
 		report.setTotalNumberOfCases(totalNumberOfCases);

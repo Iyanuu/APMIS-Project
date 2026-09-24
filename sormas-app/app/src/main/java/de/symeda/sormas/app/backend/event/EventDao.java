@@ -37,6 +37,7 @@ import de.symeda.sormas.app.backend.common.DatabaseHelper;
 import de.symeda.sormas.app.backend.config.ConfigProvider;
 import de.symeda.sormas.app.backend.location.Location;
 import de.symeda.sormas.app.backend.task.Task;
+import de.symeda.sormas.app.backend.user.User;
 import de.symeda.sormas.app.util.DiseaseConfigurationCache;
 import de.symeda.sormas.app.util.LocationService;
 
@@ -78,8 +79,9 @@ public class EventDao extends AbstractAdoDao<Event> {
 
 		event.setReportDateTime(new Date());
 		event.setReportingUser(ConfigProvider.getUser());
-		event.getEventLocation().setRegion(ConfigProvider.getUser().getRegion());
-		event.getEventLocation().setDistrict(ConfigProvider.getUser().getDistrict());
+		User currentUser = ConfigProvider.getUser();
+		event.getEventLocation().setRegion(currentUser.getRegion());
+		event.getEventLocation().setDistrict(currentUser.getDistrict());
 		event.setEventStatus(EventStatus.SIGNAL);
 		event.setEventInvestigationStatus(EventInvestigationStatus.PENDING);
 

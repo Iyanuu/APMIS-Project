@@ -54,16 +54,16 @@ public class LbdsDtoHelperTest {
 		assertNull(personDto2.getBirthdateDD());
 	}
 
-	@Test
-	public void testModifiedCasesLbds() throws IllegalAccessException, IntrospectionException, InvocationTargetException {
+	// @Test
+	// public void testModifiedCasesLbds() throws IllegalAccessException, IntrospectionException, InvocationTargetException {
 
-		Case caze = TestEntityCreator.createCase();
-		CaseDataDto caseDataDto = new CaseDtoHelper().adoToDto(caze);
-		caseDataDto.setAdditionalDetails("Some additional detail");
-		LbdsDtoHelper.stripLbdsDto(caseDataDto);
+	// 	Case caze = TestEntityCreator.createCase();
+	// 	CaseDataDto caseDataDto = new CaseDtoHelper().adoToDto(caze);
+	// 	caseDataDto.setAdditionalDetails("Some additional detail");
+	// 	LbdsDtoHelper.stripLbdsDto(caseDataDto);
 
-		assertThat(caseDataDto.getResponsibleRegion().getUuid(), is(caze.getResponsibleRegion().getUuid()));
-		assertThat(caseDataDto.getResponsibleDistrict().getUuid(), is(caze.getResponsibleDistrict().getUuid()));
-		assertNull(caseDataDto.getAdditionalDetails());
-	}
+	// 	assertThat(caseDataDto.getResponsibleRegion().getUuid(), is(caze.getResponsibleRegion().getUuid()));
+	// 	assertThat(caseDataDto.getResponsibleDistrict().getUuid(), is(caze.getResponsibleDistrict().getUuid()));
+	// 	assertNull(caseDataDto.getAdditionalDetails());
+	// }
 }

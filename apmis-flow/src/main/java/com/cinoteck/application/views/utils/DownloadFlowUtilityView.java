@@ -72,10 +72,17 @@ public final class DownloadFlowUtilityView {
 							PopulationDataDto.COMMUNITY));
 					columnNames.add(I18nProperties.getCaption(Captions.Campaign));
 
+
+					columnNames.add(
+							I18nProperties.getPrefixCaption(PopulationDataDto.I18N_PREFIX, PopulationDataDto.MODALITY));
+					columnNames.add(I18nProperties.getPrefixCaption(PopulationDataDto.I18N_PREFIX,
+							PopulationDataDto.DISTRICT_STATUS));
+
+
 					Map<AgeGroup, Integer> ageGroupPositions = new HashMap<>();
 					int ageGroupIndex = columnNames.size();
 					for (AgeGroup ageGroup : AgeGroup.values()) {
-						if (ageGroup.equals(AgeGroup.AGE_0_4) || ageGroup.equals(AgeGroup.AGE_5_10) || ageGroup.equals(AgeGroup.AGE_4_23M)) {
+						if (ageGroup.equals(AgeGroup.AGE_0_4) || ageGroup.equals(AgeGroup.AGE_5_10) || ageGroup.equals(AgeGroup.AGE_4_23M) || ageGroup.equals(AgeGroup.AGE_4_59M)) {
 							columnNames.add(DataHelper.getSexAndAgeGroupString(ageGroup, null));
 							ageGroupPositions.put(ageGroup, ageGroupIndex);
 							ageGroupIndex += 1;
@@ -87,12 +94,7 @@ public final class DownloadFlowUtilityView {
 //	                    ageGroupPositions.put(ageGroup, ageGroupIndex);
 //	                    ageGroupIndex += 4; // Increment by 4 for each age group
 					}
-
-					columnNames.add(
-							I18nProperties.getPrefixCaption(PopulationDataDto.I18N_PREFIX, PopulationDataDto.MODALITY));
-					columnNames.add(I18nProperties.getPrefixCaption(PopulationDataDto.I18N_PREFIX,
-							PopulationDataDto.DISTRICT_STATUS));
-
+					
 					writer.writeNext(columnNames.toArray(new String[0]));
 
 					List<Object[]> populationExportDataList = FacadeProvider.getPopulationDataFacade()
@@ -121,9 +123,9 @@ public final class DownloadFlowUtilityView {
 								: (String) populationExportData[6];
 						String dataCampaignName = populationExportData[7] == null ? ""
 								: (String) populationExportData[7];
-						String dataModality = populationExportData[10] == null ? "" : (String) populationExportData[10];
-						String dataDistrictStatus = populationExportData[11] == null ? ""
-								: (String) populationExportData[11];
+						String dataModality = populationExportData[8] == null ? "" : (String) populationExportData[8];
+						String dataDistrictStatus = populationExportData[9] == null ? ""
+								: (String) populationExportData[9];
 
 						if (exportLine != null && (!dataRegionName.equals(regionName)
 								|| !dataDistrictName.equals(districtName) || !dataCampaignName.equals(campaignName)
@@ -143,13 +145,13 @@ public final class DownloadFlowUtilityView {
 							exportLine[5] = dataDistrictCode;
 							exportLine[6] = dataCommunityName;
 							exportLine[7] = dataCampaignName;
-							exportLine[10] = dataModality;
-							exportLine[11] = dataDistrictStatus;
+							exportLine[8] = dataModality;
+							exportLine[9] = dataDistrictStatus;
 						}
 
-						AgeGroup ageGroup = AgeGroup.valueOf( populationExportData[8] != null ? (String) populationExportData[8] : "");
+						AgeGroup ageGroup = AgeGroup.valueOf( populationExportData[10] != null ? (String) populationExportData[10] : "");
 						if(ageGroup != null && ageGroup.toString() != "") {
-							String sexString = (String) populationExportData[9];
+							String sexString = (String) populationExportData[11];
 							Integer ageGroupPosition = ageGroupPositions.get(ageGroup);
 
 							if (Sex.MALE.getName().equals(sexString)) {

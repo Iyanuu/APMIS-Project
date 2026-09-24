@@ -167,9 +167,7 @@ public class UserForm extends FormLayout {
 	static UserProvider currentUser = new UserProvider();
 	Set<UserRole> roles = new HashSet<UserRole>();
 	Set<FormAccess> formAccessesList = new LinkedHashSet<FormAccess>();
-	Set<FormAccess> preCampformAccessesList = new LinkedHashSet<FormAccess>();
-	Set<FormAccess> intraCampformAccessesList = new LinkedHashSet<FormAccess>();
-	Set<FormAccess> postCampformAccessesList = new LinkedHashSet<FormAccess>();
+
 	private final UserProvider userProvider = new UserProvider();
 	H2 pInfo = new H2(I18nProperties.getString(Strings.headingPersonData));
 	H2 userData = new H2(I18nProperties.getString(Strings.headingUserData));
@@ -629,11 +627,11 @@ public class UserForm extends FormLayout {
 
 		// NOTE: Disabling FormAccess restriction for EOC Users
 
-//		if (userProvider.getUser().getUsertype() == UserType.WHO_USER) {
 		formAccessesList.add(FormAccess.ARCHIVE);
 		formAccessesList.add(FormAccess.FLW);
 		formAccessesList.add(FormAccess.MODALITY_PRE);
 		formAccessesList.add(FormAccess.TRAINING);
+		formAccessesList.add(FormAccess.MONITORING);
 		formAccessesList.add(FormAccess.ICM);
 		formAccessesList.add(FormAccess.ADMIN);
 		formAccessesList.add(FormAccess.EAG_ICM);
@@ -646,31 +644,9 @@ public class UserForm extends FormLayout {
 		formAccessesList.add(FormAccess.EAG_LQAS);
 		formAccessesList.add(FormAccess.MODALITY_POST);
 		formAccessesList.add(FormAccess.VALIDATION);
+		formAccessesList.add(FormAccess.MICROPLANNING);
 		formAccess.setItems(formAccessesList);
-		// preCampformAccess.setItems(preCampformAccessesList);
-		// intraCampformAccess.setItems(intraCampformAccessesList);
-		// postCampformAccess.setItems(postCampformAccessesList);
 
-//		} else {
-//			formAccessesList.remove(FormAccess.FLW);
-//			formAccessesList.remove(FormAccess.TRAINING);
-//			formAccessesList.remove(FormAccess.PCA);
-//			formAccessesList.remove(FormAccess.LQAS);
-//			formAccessesList.remove(FormAccess.FMS);
-//
-//			formAccessesList.add(FormAccess.ARCHIVE);
-//			// formAccess.setItems(formAccessesList);
-//			// preCampformAccess.setVisible(false);
-//			formAccessesList.add(FormAccess.ICM);
-//			formAccessesList.add(FormAccess.ADMIN);
-//			formAccessesList.add(FormAccess.EAG_ICM);
-//			formAccessesList.add(FormAccess.EAG_ADMIN);
-//			// intraCampformAccess.setItems(intraCampformAccessesList);
-//			// postCampformAccess.setVisible(false);
-//
-//			formAccess.setItems(formAccessesList);
-//		}
-//		commusr.setValue(isCommonUser);
 
 		Div formAccessCheckers = new Div();
 
@@ -701,10 +677,10 @@ public class UserForm extends FormLayout {
 				+ "var newContentL = '<hr><b class=\"formaccesschkbox\">Pre-Campaign</b><hr>';\n"
 				+ "children[i].insertAdjacentHTML('afterend', newContentL);\n" + "}\n"
 
-				+ "if (i === 3) {\n" + "var newContentL = '<hr><b class=\"formaccesschkbox\">Intra-Campaign</b><hr>';\n"
+				+ "if (i === 4) {\n" + "var newContentL = '<hr><b class=\"formaccesschkbox\">Intra-Campaign</b><hr>';\n"
 				+ "children[i].insertAdjacentHTML('afterend', newContentL);\n" + "}\n"
 
-				+ "if (i === 7) {\n" + "var newContentL = '<hr><b class=\"formaccesschkbox\">Post-Campaign</b><hr>';\n"
+				+ "if (i === 8) {\n" + "var newContentL = '<hr><b class=\"formaccesschkbox\">Post-Campaign</b><hr>';\n"
 				+ "children[i].insertAdjacentHTML('afterend', newContentL);\n" + "}\n"
 
 				+ "}}";

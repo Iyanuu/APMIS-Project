@@ -39,6 +39,7 @@ import de.symeda.sormas.api.campaign.data.CampaignFormDataEntry;
 import de.symeda.sormas.api.campaign.data.PlatformEnum;
 import de.symeda.sormas.api.campaign.form.CampaignFormElement;
 import de.symeda.sormas.api.campaign.form.CampaignFormElementType;
+import de.symeda.sormas.api.campaign.form.CampaignFormMetaGeographyLevel;
 import de.symeda.sormas.api.utils.ValidationException;
 import de.symeda.sormas.app.BaseActivity;
 import de.symeda.sormas.app.BaseEditActivity;
@@ -78,7 +79,7 @@ public class CampaignFormDataEditActivity extends BaseEditActivity<CampaignFormD
     private CampaignFormDataCriteria criteria = new CampaignFormDataCriteria();
     private final ExpressionParser expressionParser = new SpelExpressionParser();
 
-    List<String> preCampaignsCategories = List.of("FLW", "MODALITY_PRE", "TRAINING");
+    List<String> preCampaignsCategories = List.of("FLW", "MODALITY_PRE", "TRAINING", "MONITORING");
     List<String> intraCampaignsCategories = List.of("ICM", "ADMIN", "EAG-ICM", "EAG-ADMIN");
     List<String> postCampaignsCategories = List.of("PCA", "FMS", "LQAS", "EAG-PCA", "EAG-FMS", "EAG-LQAS", "MODALITY_POST", "VALIDATION");
 
@@ -262,8 +263,21 @@ public class CampaignFormDataEditActivity extends BaseEditActivity<CampaignFormD
         if(campaignFormDataToSave.getFormDate() == null){
             saveChecker = false;
         }else{
-            if(campaignFormDataToSave.getCommunity() == null){
-                if (!campaignFormMeta.isDistrictentry()){
+            String geographyLevel = campaignFormMeta.getGeographylevel();
+            if (CampaignFormMetaGeographyLevel.REGION.toString().equals(geographyLevel)) {
+                if (campaignFormDataToSave.getArea() == null) {
+                    saveChecker = false;
+                }
+            } else if (CampaignFormMetaGeographyLevel.PROVINCE.toString().equals(geographyLevel)) {
+                if (campaignFormDataToSave.getRegion() == null) {
+                    saveChecker = false;
+                }
+            } else if (CampaignFormMetaGeographyLevel.DISTRICT.toString().equals(geographyLevel)) {
+                if (campaignFormDataToSave.getDistrict() == null) {
+                    saveChecker = false;
+                }
+            } else {
+                if (campaignFormDataToSave.getCommunity() == null) {
                     saveChecker = false;
                 }
             }
@@ -305,7 +319,30 @@ public class CampaignFormDataEditActivity extends BaseEditActivity<CampaignFormD
             if(campaignFormDataToSave.getFormDate() == null){
                 NotificationHelper.showNotification(this, ERROR, "Form Date cannot be left Empty.");
             }else if(campaignFormDataToSave.getCommunity() == null){
-                NotificationHelper.showNotification(this, ERROR, "Cluster cannot be left Empty. Please select a cluster to proceed.");
+                String geoLevel = campaignFormMeta.getGeographylevel();
+                switch (geoLevel == null ? "CLUSTER" : geoLevel) {
+                    case "REGION":
+                        if (campaignFormDataToSave.getArea() == null) {
+                            NotificationHelper.showNotification(this, ERROR, "Region cannot be left Empty. Please select a region to proceed.");
+                        }
+                        break;
+                    case "PROVINCE":
+                        if (campaignFormDataToSave.getRegion() == null) {
+                            NotificationHelper.showNotification(this, ERROR, "Province cannot be left Empty. Please select a province to proceed.");
+                        }
+                        break;
+                    case "DISTRICT":
+                        if (campaignFormDataToSave.getDistrict() == null) {
+                            NotificationHelper.showNotification(this, ERROR, "District cannot be left Empty. Please select a district to proceed.");
+                        }
+                        break;
+                    case "CLUSTER":
+                    default:
+                        if (campaignFormDataToSave.getCommunity() == null) {
+                            NotificationHelper.showNotification(this, ERROR, "Cluster cannot be left Empty. Please select a cluster to proceed.");
+                        }
+                        break;
+                }
             }
 
             }

@@ -44,6 +44,7 @@ import de.symeda.sormas.api.campaign.data.CampaignFormDataEntry;
 import de.symeda.sormas.api.campaign.form.CampaignFormElement;
 import de.symeda.sormas.api.campaign.form.CampaignFormElementType;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaDto;
+import de.symeda.sormas.api.campaign.form.CampaignFormMetaGeographyLevel;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaReferenceDto;
 import de.symeda.sormas.api.i18n.Captions;
 import de.symeda.sormas.api.i18n.I18nProperties;
@@ -206,7 +207,7 @@ public class CampaignFormDataImporter extends DataImporter {
 			}
 			
 			CampaignFormMetaDto  ccc = FacadeProvider.getCampaignFormMetaFacade().getCampaignFormMetaByUuid(campaignFormMetaUuid);
-			ccc.isDistrictentry();
+			ccc.getGeographyLevel();
 			if (D_CODE.equalsIgnoreCase(entityProperties[i]) && regionExists) {
 				logger.debug("there is dcode -------------------------------------------" + regionExists);
 
@@ -249,7 +250,7 @@ public class CampaignFormDataImporter extends DataImporter {
 					CampaignFormMetaDto campaignMetaDto = FacadeProvider.getCampaignFormMetaFacade().getCampaignFormMetaByUuid(campaignFormMetaUuid);
 					
 					campaignFormData.setRecordversion(1L);
-					if(campaignMetaDto.isDistrictentry()) {
+					if(campaignMetaDto.getGeographyLevel().equals(CampaignFormMetaGeographyLevel.DISTRICT)) {
 						campaignFormData.setCommunity(null);						
 						try {
 							campaignFormData = insertImportRowIntoData(campaignFormData, values, entityProperties);							
@@ -275,7 +276,7 @@ public class CampaignFormDataImporter extends DataImporter {
 				
 				campaignFormData.setRecordversion(1L);
 
-				if(campaignMetaDto.isDistrictentry()) {
+				if(campaignMetaDto.getGeographyLevel().equals(CampaignFormMetaGeographyLevel.DISTRICT)) {
 					campaignFormData.setCommunity(null);
 					
 					try {
