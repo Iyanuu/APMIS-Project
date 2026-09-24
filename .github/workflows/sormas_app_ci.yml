@@ -12,9 +12,11 @@
 name: Android CI
 
 env:
-  # sormas-app sets sourceCompatibility/targetCompatibility to VERSION_11,
-  # which also matches the JDK used by the server-side workflow.
-  JAVA: 11
+  # sormas-api compiles with <release>17</release> and sormas-app sets
+  # sourceCompatibility/targetCompatibility to VERSION_17, so the JDK here has to
+  # be 17 as well: this workflow installs sormas-api with Maven before Gradle runs,
+  # and a JDK 11 toolchain fails that step with "release version 17 not supported".
+  JAVA: 17
 
 on:
   workflow_dispatch:
