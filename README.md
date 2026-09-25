@@ -1,82 +1,129 @@
-<p align="center">
-  <a href="https://sormas.org/">
-    <img
-      alt="SORMAS - Surveillance, Outbreak Response Management and Analysis System"
-      src="https://raw.githubusercontent.com/hzi-braunschweig/SORMAS-Project/development/logo.png"
-      height="200"
-    />
-  </a>
-  <br/>
-  <a href="https://github.com/hzi-braunschweig/SORMAS-Project/blob/development/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-GPL%20v3-blue"/></a>
-  <a href="https://github.com/hzi-braunschweig/SORMAS-Project/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/v/release/hzi-braunschweig/SORMAS-Project"/></a>
-  <a href="https://github.com/hzi-braunschweig/SORMAS-Project/actions?query=workflow%3A%22Java+CI+with+Maven%22"><img alt="Development Build Status" src="https://github.com/hzi-braunschweig/SORMAS-Project/workflows/Java%20CI%20with%20Maven/badge.svg?branch=development"/></a>
-  <a href="https://gitter.im/SORMAS-Project"><img alt="Gitter" src="https://badges.gitter.im/SORMAS-Project/dev-support.svg"/></a>
-  <a href="https://twitter.com/SORMASDev"><img alt="Twitter" src="https://img.shields.io/twitter/follow/SORMASDev?label=%40SORMASDev&style=social"/></a>
-</p>
-<br/>
+# APMIS — working fork
 
-# SORMAS
+Working fork of [AFG-Polio-Data/APMIS-Project](https://github.com/AFG-Polio-Data/APMIS-Project), used for the engagement to raise application quality through tests and a better developer workflow.
 
-**SORMAS** (Surveillance Outbreak Response Management and Analysis System) is an open source eHealth system - consisting of separate web and mobile apps - that is geared towards optimizing the processes used in monitoring the spread of infectious diseases and responding to outbreak situations.
+APMIS is derived from [SORMAS](https://github.com/hzi-braunschweig/SORMAS-Project). The upstream SORMAS readme — module descriptions, server setup, contribution guides — is preserved at [`apmis-readme.md`](apmis-readme.md) and is still the reference for anything this file does not cover.
 
-## FAQ (Frequently Asked Questions)
+## How we work
 
-### How Does it Work?
-You can give SORMAS a try on our demo server at <https://demoversion.sormas-oegd.de>!
+We are a small team working on testing and developer workflow, separate from the APMIS application developers. We contribute to **this fork only**. Nothing we write goes directly to `AFG-Polio-Data/APMIS-Project`; it reaches them through a reviewed promotion, described below.
 
-### How Can I Get Involved?
-Read through our [*Contributing Readme*](docs/CONTRIBUTING.md) and contact us at sormas@helmholtz-hzi.de or join our [developer chat on Gitter](https://gitter.im/SORMAS-Project) to learn how you can help to drive the development of SORMAS forward and to get development support from our core developers. SORMAS is a community-driven project, and we'd love to have you on board!
-If you want to contribute to the code, please strictly adhere to the [*Development Environment*](docs/DEVELOPMENT_ENVIRONMENT.md) guide to ensure that everything is set up correctly.
-Please also make sure that you've read the [*Development Contributing Guidelines*](docs/CONTRIBUTING.md#development-contributing-guidelines) before you start to develop, and either follow or regularly check our Twitter account <a href="https://twitter.com/SORMASDev" target="_blank">@SORMASDev</a> to stay up to date with our schedule, new releases, guideline changes and other announcements.
+```mermaid
+flowchart LR
+    A["feature/fix branch"] -->|"PR · gates green · approved"| B["development<br/>(this fork)"]
+    B -->|"promote when vetted"| C["master<br/>(this fork)"]
+    C -->|"PR"| D["development<br/>(AFG-Polio-Data)"]
+    D -.->|"sync in, regularly"| B
+```
 
-### How Can I Report a Bug or Request a Feature?
-If you want to report a **security issue**, please read and follow our [*Security Policies*](docs/SECURITY.md). For bugs without security implications, change and feature requests, please [create a new issue](https://github.com/hzi-braunschweig/SORMAS-Project/issues/new/choose) and
-read the [*Submitting an Issue*](docs/CONTRIBUTING.md#submitting-an-issue) guide for more detailed instructions. We appreciate your help!
+Four rules follow from that shape.
 
-### Which Browsers and Android Versions Are Supported?
-SORMAS officially supports and is tested on **Chromium-based browsers** (like Google Chrome) and **Mozilla Firefox**, and all Android versions starting from **Android 7.0** (Nougat). In principle, SORMAS should be usable with all web browsers that are supported by Vaadin 8 (Chrome, Firefox, Safari, Edge, Internet Explorer 11; see <https://vaadin.com/faq>).
+**1. Work lands on `development` here, through a pull request.**
+No direct pushes. Every change is a pull request into `development` on this fork, and it needs both the gates green and an approving review before it merges. Approval currently rests with the repository owner.
 
-Making use of the SORMAS web application through a mobile device web browser is possible and acceptable also in countries that are subject to the General Data Protection Regulation (GDPR) as enforced by the European Union. However, in such countries that are subject to the GDPR, the Android application (.apk file) for SORMAS should not be used on mobile devices until further notice.
+**2. `master` on this fork means "vetted, ready to propose upstream".**
+This is *not* what `master` means upstream, where it tracks released production. Here it is a staging point: things that have proven themselves on `development` get promoted to `master`, and `master` is what we raise upstream from. Nothing is promoted because it merged — it is promoted because we are prepared to defend it to the APMIS developers.
 
-### Is there a ReST API documentation?
-Yes! Please download the [latest release](https://github.com/hzi-braunschweig/SORMAS-Project/releases/latest) and copy the content of /deploy/openapi/sormas-rest.yaml to an editor that generates a visual API documentation(e.g. <https://editor.swagger.io/>).
-A runtime Swagger documentation of the External Visits Resource (used by external symptom journals such as CLIMEDO or PIA) is available at ``<<host>>/sormas-rest/openapi.json`` or ``<<host>>/sormas-rest/openapi.yaml``
+**3. Upstream pull requests come from `master`, and stay narrow.**
+One concern per pull request. The APMIS developers are being asked to adopt gates and builds they did not write, so each proposal has to be reviewable on its own terms. A pull request bundling a workflow change, a dependency fix and a test is much harder to accept than three that each do one thing.
 
-<p align="center"><img src="https://user-images.githubusercontent.com/23701005/74659600-ebb8fc00-5194-11ea-836b-a7ca9d682301.png"/></p>
+**4. Sync *in* from upstream often.**
+`development` here must stay current with `AFG-Polio-Data:development`. Divergence is what makes upstream pull requests conflict, and it compounds quietly — the four-layer build failure this fork untangled was partly a product of drift. Sync in from upstream's `development`; never sync upstream's `master` into ours, because the two mean different things.
 
-## Guidelines and Resources
-If you want to learn more about the development and contribution process, setting up or customizing your own system, or technical details, please consider the following guides and resources available in this repository. You can also view this readme and all guides outside the Wiki with a full table of content and search functionality here: <https://hzi-braunschweig.github.io/SORMAS-Project/>
+### Branch names
 
-* **[GitHub Wiki](https://github.com/hzi-braunschweig/SORMAS-Project/wiki) - Our wiki contains additional guides for server customization and development instructions. Please have a look at it if you need information on anything that this readme does not contain.**
-* [Contributing Guidelines](docs/CONTRIBUTING.md) - These are mandatory literature if you want to contribute to this repository in any way (e.g. by submitting issues, developing code, or translating SORMAS into new languages).
-* [Development Environment Setup Instructions](docs/DEVELOPMENT_ENVIRONMENT.md) - If you want to get involved with development, this guide tells you how to correctly set up your system in order to contribute to the code in adherence with codestyle guidelines, development practices, etc.
-* [Troubleshooting](docs/TROUBLESHOOTING.md) - A collection of solutions to common (mostly development) problems. Please consult this readme when encountering issues before issuing a support request.
-* [Server Customization](docs/SERVER_CUSTOMIZATION.md) - If you are maintaining a SORMAS server or are a developer, this guide explains core concepts such as turning features on or off, importing infrastructure data or adjusting the configuration file.
-* [Internationalization](docs/I18N.md) - SORMAS can be translated in any language by using the open source tool [Crowdin](https://crowdin.com/project/sormas); this resource explains how this process is working.
-* [Disease Definition Instructions](docs/SOP_DISEASES.md) - We already support a large number of diseases, but not all of them are fully configured for case-based surveillance, and some might not be part of SORMAS at all yet; if you need SORMAS to support a specific disease, please use these instructions to give us all the information we need in order to extend the software with your requested disease.
-* [Security Policies](docs/SECURITY.md) - These contain important information about how to report security problems and the processes we are using to take care of them.
-* [3rd Party License Acknowledgement](docs/3RD_PARTY_ACK.md) - This resource contains the names and license copies of external resources that SORMAS is using.
+| Prefix | For |
+|---|---|
+| `test/` | New or extended tests |
+| `ci/` | Workflows, gates, pipeline |
+| `fix/` | Defects |
+| `docs/` | Documentation |
+| `chore/` | Dependencies, tooling, housekeeping |
 
-If you want to set up a SORMAS instance for production, testing or development purposes, please refer to the following guides:
-* [Installing a SORMAS Server](docs/SERVER_SETUP.md)
-* [Installing a SORMAS Server for Development](docs/SERVER_DEV_SETUP.md)
-* [Updating a SORMAS Server](docs/SERVER_UPDATE.md)
-* [Creating a Demo Android App](docs/DEMO_APP.md)
+Include the issue number where there is one: `test/25-version-matrix`.
 
-## Project Structure
-The project consists of the following modules:
+### Commits
 
-- **sormas-api:** General business logic and definitions for data exchange between app and server
-- **sormas-app:** The Android app
-- **sormas-backend:** Server entity services, facades, etc.
-- **sormas-base:** Base project that also contains build scripts
-- **sormas-base/dependencies:** Dependencies to be deployed with the payara server
-- **sormas-cargoserver:** Setup for a local dev server using maven-cargo
-- **sormas-e2e-performance-tests:** Automated performance tests addressing the ReST interface (sormas-rest)
-- **sormas-e2e-tests:** Automated frontend tests addressing sormas-ui **and** API tests against sormas-rest. The API steps are partly used to prepare data for UI tests.
-- **sormas-ear:** The ear needed to build the application
-- **sormas-keycloak-service-provider:** Custom Keycloak SPI for SORMAS
-- **sormas-rest:** The REST interface; see [`sormas-rest/README.md`](sormas-rest/README.md)
-- **sormas-ui:** The web application
-- **sormas-widgetset:** The GWT widgetset generated by Vaadin
-- **sormas-e2e-tests:** Automated tests addressing the sormas-ui, and the ReST interface
+Conventional commits — `type(scope): summary`. The type matches the branch prefix; the scope is the module (`app`, `api`, `backend`, `flow`, or omitted for repo-wide).
+
+Explain *why* in the body, not what. The diff shows what changed; it cannot show what you ruled out, or which failure you were chasing. A commit whose body explains why the Android workflow needs JDK 17 stops the next person "correcting" it back.
+
+### Before you open a pull request
+
+- Gates pass. If a check is red, say why in the description rather than leaving a reviewer to work it out.
+- The issue it closes is linked.
+- Test tickets state what would now fail that previously passed silently. A test that cannot fail is not coverage.
+- If you found something unrelated and broken, raise an issue rather than widening the pull request.
+
+### Reviewing, with a team this size
+
+With two or three of us, review cannot be a safety net — we are each other's only reviewer, and the approver is also a contributor. So the automated gates carry the weight: a check cannot be talked into approving something.
+
+What review is for here is knowledge transfer. Nobody should be the only person who understands a mechanism we have built. If a pull request is the only place a decision is recorded, that decision is not documented.
+
+### Definition of done
+
+A ticket is done when the change is merged to `development` here, the gates prove it, and anything it revealed is either fixed or ticketed. Not when the code works locally.
+
+## Where work is tracked
+
+Issues on this repository, grouped on the **APMIS Testing** project board.
+
+| Label | Meaning |
+|---|---|
+| `phase-1` | Turn the lights on — make the build and its signal real |
+| `phase-2` | Protect the field — contract tests between modules |
+| `wiring` | Pipeline plumbing, done before adding tests |
+| `good first task` | Small, self-contained, safe to pick up cold |
+
+Pull requests land on `development` here. Changes intended for upstream are raised separately and kept narrow.
+
+## Building
+
+**Java 17.** The parent pom sets `<release>17</release>`; a JDK 11 toolchain fails to compile `sormas-api`.
+
+```bash
+cd sormas-base
+mvn verify          # ~7 minutes, all server modules
+```
+
+The Android app resolves `de.symeda.sormas:sormas-api` from `mavenLocal()`, so that module must be installed by Maven **before** Gradle runs:
+
+```bash
+cd sormas-base && mvn install -pl :sormas-api -am -DskipTests
+cd ../sormas-app && ./gradlew :app:assembleDebug :app:testDebugUnitTest
+```
+
+## Test coverage as it stands
+
+Honest baseline, measured on this branch:
+
+| Module | Unit tests | Runs in CI |
+|---|---|---|
+| `sormas-api`, `sormas-backend`, `sormas-ui`, `sormas-rest`, `apmis-flow` | none | — |
+| `sormas-app` | 3 files | yes |
+| `sormas-e2e-tests` | 22 Cucumber features | not yet |
+
+`mvn verify` reaches `failsafe:integration-test` on every module and runs nothing server-side. JUnit, Mockito, JaCoCo and Surefire are already inherited from `sormas-base/pom.xml`, so a test placed in `<module>/src/test/java/` runs with no build changes.
+
+## Things that will catch you out
+
+Each of these cost real time to find.
+
+**The Android workflow's JDK is tied to the server, not the app.** `sormas_app_ci.yml` must use JDK 17 because it builds `sormas-api` with Maven first. Setting it to match the app's bytecode target breaks the build.
+
+**Two migration counters move together.** The server schema (`sormas_schema.sql`, `INSERT INTO schema_version`, currently 498) and the app's local database (`DatabaseHelper.DATABASE_VERSION`, currently 359). Both are append-only single files, so parallel work collides on them. Rebase before merging.
+
+**A cross-module change is atomic by necessity.** `sormas-api` is compiled against by the backend, UI, REST layer and the Android app. Adding a DTO field and deferring the app half leaves `development` uncompilable for everyone.
+
+**A path-filtered check cannot be a required check.** `sormas_app_ci.yml` only triggers on `sormas-app/**` and `sormas-api/**`. Marking it required would leave a `sormas-ui`-only pull request waiting forever for a result that never arrives.
+
+**Beware a build that passes for the wrong reason.** Three failures were stacked here at one point, each hiding the next: checkout failed on a missing secret, then dependency resolution failed on a withdrawn Vaadin beta, then compilation failed on a class that had never been committed. A green tick after fixing one only means the next one is now visible.
+
+## Modules
+
+As upstream, plus `apmis-flow` (Vaadin 23 web module, APMIS-specific). Full descriptions in [`apmis-readme.md`](apmis-readme.md#project-structure).
+
+## Licence
+
+GPL v3, as upstream. See [`LICENSE`](LICENSE).
