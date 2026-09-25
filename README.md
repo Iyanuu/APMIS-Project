@@ -8,6 +8,8 @@ APMIS is derived from [SORMAS](https://github.com/hzi-braunschweig/SORMAS-Projec
 
 We are a small team working on testing and the developer workflow, separate from the APMIS application developers. We work in this fork. Our changes reach the APMIS team by being offered to them one at a time, for them to accept or refuse.
 
+This section explains how the arrangement works and why. For the commands to type, see [**Team workflow — a step by step guide**](docs/TEAM_WORKFLOW.md).
+
 ### Three kinds of branch, each with one job
 
 **`development` — our copy of the APMIS project.**
