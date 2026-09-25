@@ -26,8 +26,6 @@ jobs:
         if: ${{ fromJSON(env.PRIVILEGED_RUN) }}
         uses: actions/checkout@v7
         with:
-          # Fall back to the built-in token so the workflow still runs in forks,
-          # where the SORMAS_VITAGROUP_TOKEN secret is not available.
           token: ${{ secrets.SORMAS_VITAGROUP_TOKEN || github.token }}
 
       - name: Checkout repository (without token)
