@@ -27,6 +27,8 @@ jobs:
     # Name the Job
     name: Lint Code Base
     # Set the agent to run on
+    # ubuntu-20.04 runners were retired by GitHub; jobs requesting that label
+    # are never scheduled and end up cancelled.
     runs-on: ubuntu-latest
 
     ##################
