@@ -97,7 +97,7 @@ git commit
 
 Write the message as `type(scope): summary`, then explain **why** underneath:
 
-```
+```text
 test(api): cover the version compatibility rules
 
 isCompatibleToApi decides whether a phone in the field is allowed to sync
