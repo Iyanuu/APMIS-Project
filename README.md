@@ -6,29 +6,63 @@ APMIS is derived from [SORMAS](https://github.com/hzi-braunschweig/SORMAS-Projec
 
 ## How we work
 
-We are a small team working on testing and developer workflow, separate from the APMIS application developers. We contribute to **this fork only**. Nothing we write goes directly to `AFG-Polio-Data/APMIS-Project`; it reaches them through a reviewed promotion, described below.
+We are a small team working on testing and the developer workflow, separate from the APMIS application developers. We work in this fork. Our changes reach the APMIS team by being offered to them one at a time, for them to accept or refuse.
+
+### Three kinds of branch, each with one job
+
+**`development` — our copy of the APMIS project.**
+This branch exists to stay identical to `AFG-Polio-Data:development`. We never edit it. Nothing is committed here directly and no pull request targets it. Its only job is to follow along as the APMIS developers make changes.
+
+**`main` — our workspace.**
+Everything we build lands here. This is where our work comes together, where the checks run against all of it, and what we would demo from. Some of what lives here will never go to the APMIS team, and that is fine.
+
+**Your branch — one piece of work.**
+Short-lived. Started from `development`, finished when the work is merged.
+
+### The flow
 
 ```mermaid
 flowchart LR
-    A["feature/fix branch"] -->|"PR · gates green · approved"| B["development<br/>(this fork)"]
-    B -->|"promote when vetted"| C["master<br/>(this fork)"]
-    C -->|"PR"| D["development<br/>(AFG-Polio-Data)"]
-    D -.->|"sync in, regularly"| B
+    U["APMIS project<br/>development"]
+    D["our development<br/>a copy, never edited"]
+    F["your branch"]
+    M["main<br/>our workspace"]
+
+    U -->|"1 · we pull their updates down"| D
+    D -->|"2 · start your branch here"| F
+    F -->|"3 · pull request, reviewed and checked"| M
+    F -->|"4 · the same branch, offered to APMIS"| U
 ```
 
-Four rules follow from that shape.
+**1. We keep our copy current.** `development` is updated from the APMIS project regularly. Because nobody edits it, this never causes a conflict — it simply catches up.
 
-**1. Work lands on `development` here, through a pull request.**
-No direct pushes. Every change is a pull request into `development` on this fork, and it needs both the gates green and an approving review before it merges. Approval currently rests with the repository owner.
+**2. You start your branch from `development`.** Not from `main`. This matters, and the next section explains why.
 
-**2. `master` on this fork means "vetted, ready to propose upstream".**
-This is *not* what `master` means upstream, where it tracks released production. Here it is a staging point: things that have proven themselves on `development` get promoted to `master`, and `master` is what we raise upstream from. Nothing is promoted because it merged — it is promoted because we are prepared to defend it to the APMIS developers.
+**3. You open a pull request into `main`.** That is where it gets reviewed and where the checks run. Once approved and merged, the work is part of what we have built.
 
-**3. Upstream pull requests come from `master`, and stay narrow.**
-One concern per pull request. The APMIS developers are being asked to adopt gates and builds they did not write, so each proposal has to be reviewable on its own terms. A pull request bundling a workflow change, a dependency fix and a test is much harder to accept than three that each do one thing.
+**4. The same branch is then offered to the APMIS team**, as a second pull request into their `development`. Same branch, different destination. No new branch, no copying commits across.
 
-**4. Sync *in* from upstream often.**
-`development` here must stay current with `AFG-Polio-Data:development`. Divergence is what makes upstream pull requests conflict, and it compounds quietly — the four-layer build failure this fork untangled was partly a product of drift. Sync in from upstream's `development`; never sync upstream's `master` into ours, because the two mean different things.
+### Why start from `development` rather than `main`
+
+A branch started from our copy of the APMIS project contains **only your change**. That is what makes it something the APMIS developers can look at and say yes to.
+
+A branch started from `main` would also carry everything else our team has ever done. Offering that means asking the APMIS developers to accept all of it at once. We have tried that twice on this project and both attempts were closed without discussion.
+
+The same reasoning is why we never offer `main` itself upstream. `main` is a destination, not a starting point.
+
+### The one rule that keeps this working
+
+**Never merge `main` into your branch.**
+
+The moment you do, your branch stops containing only your change and starts carrying the team's whole history again. That is how a clean offer turns into the kind nobody accepts, and it has already happened once here.
+
+If your branch has gone stale and needs the latest from the APMIS project, rebase it onto `development` instead. Ask rather than guess — this is the one operation worth getting help with.
+
+### When your work depends on something we have not offered yet
+
+Sometimes a change only makes sense on top of an earlier one that has not reached the APMIS project. Start from that earlier branch, and wait until it has been accepted before offering yours.
+
+This is not a problem to work around. It is telling you the change is not ready to stand on its own yet.
 
 ### Branch names
 
@@ -44,26 +78,26 @@ Include the issue number where there is one: `test/25-version-matrix`.
 
 ### Commits
 
-Conventional commits — `type(scope): summary`. The type matches the branch prefix; the scope is the module (`app`, `api`, `backend`, `flow`, or omitted for repo-wide).
+Use `type(scope): summary` — the type matches your branch prefix, the scope is the module (`app`, `api`, `backend`, `flow`, or left out for repo-wide changes).
 
-Explain *why* in the body, not what. The diff shows what changed; it cannot show what you ruled out, or which failure you were chasing. A commit whose body explains why the Android workflow needs JDK 17 stops the next person "correcting" it back.
+Explain **why** in the body, not what. The diff already shows what changed. What it cannot show is what you ruled out, or which failure you were chasing. A commit explaining why the Android workflow needs JDK 17 is what stops the next person changing it back.
 
 ### Before you open a pull request
 
-- Gates pass. If a check is red, say why in the description rather than leaving a reviewer to work it out.
+- The checks pass. If one is red, say why in the description rather than leaving the reviewer to work it out.
 - The issue it closes is linked.
-- Test tickets state what would now fail that previously passed silently. A test that cannot fail is not coverage.
-- If you found something unrelated and broken, raise an issue rather than widening the pull request.
+- For a test, say what would now fail that used to pass silently. A test that cannot fail is not coverage.
+- If you found something else broken, raise an issue rather than making the pull request bigger.
 
 ### Reviewing, with a team this size
 
-With two or three of us, review cannot be a safety net — we are each other's only reviewer, and the approver is also a contributor. So the automated gates carry the weight: a check cannot be talked into approving something.
+There are two or three of us, and the person approving also writes code. Review cannot be a safety net here — the automated checks are what actually catch mistakes, because a check cannot be persuaded.
 
-What review is for here is knowledge transfer. Nobody should be the only person who understands a mechanism we have built. If a pull request is the only place a decision is recorded, that decision is not documented.
+What review is for is making sure no one person is the only one who understands something we have built. If a pull request is the only place a decision was written down, it is not documented.
 
-### Definition of done
+### Done means
 
-A ticket is done when the change is merged to `development` here, the gates prove it, and anything it revealed is either fixed or ticketed. Not when the code works locally.
+Merged into `main`, the checks proved it, and anything it uncovered is either fixed or written up as an issue. Not "it works on my machine".
 
 ## Where work is tracked
 
