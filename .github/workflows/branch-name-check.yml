@@ -15,7 +15,7 @@ jobs:
         env:
           HEAD_REF: ${{ github.head_ref }}
         run: |
-          PATTERN="^(test|ci|fix|docs|chore)/.+"
+          PATTERN="^(test|ci|fix|docs|chore|feat)/.+"
 
           if [[ "$HEAD_REF" =~ $PATTERN ]]; then
             echo "Branch name '$HEAD_REF' follows convention."
@@ -23,7 +23,7 @@ jobs:
           else
             echo "::error::Branch '$HEAD_REF' does not follow our naming convention."
             echo ""
-            echo "Our branches must start with one of: test/, ci/, fix/, docs/, chore/"
+            echo "Our branches must start with one of: test/, ci/, fix/, docs/, chore/, /feat/ followed by a descriptive name."
             echo ""
             echo "Example: fix/login-null-check"
             echo ""
