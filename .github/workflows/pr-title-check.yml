@@ -1,0 +1,57 @@
+name: PR Title Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  validate-pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lint PR title
+        uses: amannn/action-semantic-pull-request@v5
+        id: lint_pr_title
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            test
+            ci
+            docs
+            chore
+            build
+            refactor
+          requireScope: false
+          subjectPattern: ^.+$
+          wip: false
+      - name: Comment on failure
+        if: always() && steps.lint_pr_title.outputs.error_message != null
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-title-lint-error
+          message: |
+            Thanks for opening this PR! 🎉
+
+            We require PR titles to follow **Conventional Commits**, since squash-merge uses this title as the commit message on `development`.
+
+            **Format:** `type(scope): summary`
+            **Allowed types:** `feat`, `fix`, `test`, `ci`, `docs`, `chore`, `build`, `refactor`
+
+            **Example:** `fix(auth): correct token refresh race condition`
+
+            Your current title:
+            > ${{ github.event.pull_request.title }}
+
+            ${{ steps.lint_pr_title.outputs.error_message }}
+
+      - name: Delete comment on success
+        if: steps.lint_pr_title.outputs.error_message == null
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-title-lint-error
+          delete: true
