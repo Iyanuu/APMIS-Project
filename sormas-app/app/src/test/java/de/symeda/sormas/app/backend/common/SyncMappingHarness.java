@@ -1,22 +1,27 @@
 package de.symeda.sormas.app.backend.common;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 /**
- * Works out which fields a DtoHelper actually copies, in each direction.
+ * Works out which fields a DtoHelper actually copies, in each direction, by reading the compiled
+ * class.
  *
  * <p>
  * The app converts between server DTOs and its own local entities by hand, in two separate methods
@@ -31,68 +36,53 @@ import java.util.regex.Pattern;
  * that direction, and nothing in the build catches it.
  *
  * <p>
- * <b>Why this reads source rather than running the code.</b> Executing a helper is not an option:
+ * <b>Why bytecode rather than source.</b> This reads the compiled output of sormas-app and
+ * sormas-api - the same classes that ship - so the answer cannot drift because of how the source
+ * happens to be formatted, indented or wrapped, and there is no need to locate source files relative
+ * to a working directory. Running the helpers is not an option:
  * {@code CampaignFormDataDtoHelper.fillInnerFromDto} makes seven {@code DatabaseHelper.getXDao()}
- * calls, so it needs a live Android context and SQLite database. Reflection cannot see inside a
- * method body either. So the copied fields are read from the source file, while the field lists come
- * from reflection, which is exact.
+ * calls, so it needs a live Android context and SQLite database, and reflection cannot see inside a
+ * method body.
  *
  * <p>
- * <b>Why it asks per field rather than extracting every assignment.</b> An earlier attempt tried to
- * pull all {@code target.set...} calls out of each method and silently missed 19 of 59 helpers,
- * because the parameter names vary: {@code ado}/{@code dto}, {@code area}/{@code dto},
- * {@code target}/{@code source}. This reads the actual first parameter name from the signature and
- * then asks, for each field it cares about, whether that parameter is assigned. Fewer moving parts,
- * and nothing can be missed without the test noticing.
- *
- * <p>
- * Anything it cannot interpret throws. Skipping quietly is how the earlier attempt produced a wrong
- * answer that looked clean.
+ * <b>How direction is determined.</b> A setter call in bytecode records the type it was called on. In
+ * {@code fillInnerFromDto(Area area, AreaDto dto)} a copy into the entity appears as a call to
+ * {@code Area.setName}, while the same line written the wrong way round appears as
+ * {@code AreaDto.setName}. The owner type alone therefore separates the two directions, and a copy
+ * written onto the wrong object is not credited. No local variable tracking is needed, which is what
+ * made an earlier source-reading version fragile: parameter names vary between helpers and even
+ * between the two methods of one helper.
  *
  * <p>
  * <b>Three states, not two.</b> Seven of the sixteen synced entities are pull only - their
  * {@code fillInnerFromAdo} throws {@code UnsupportedOperationException}, because the app receives
- * that reference data and never sends it. Reporting every field as a gap for those would produce
+ * that reference data and never sends it back. Reporting every field as a gap for those would produce
  * around forty false positives. A third case exists too: {@code UserDtoHelper} implements the push
- * direction but copies only {@code token}, deliberately, because users are managed on the server. The
- * harness therefore reports facts - what is copied, and whether a direction is supported at all - and
- * leaves intent to an explicit expected list in each per-entity test.
+ * direction but copies only {@code token}, deliberately, because users are managed on the server. So
+ * the harness reports facts and leaves intent to an explicit expected list in each per-entity test.
+ *
+ * <p>
+ * Anything it cannot interpret throws. Skipping quietly is how an earlier attempt produced a wrong
+ * answer that looked clean.
  */
 public final class SyncMappingHarness {
 
-	/** Handled by AdoDtoHelper itself in both directions, not by the per-entity helpers. */
-	private static final Set<String> HANDLED_BY_BASE_CLASS = new LinkedHashSet<>(java.util.Arrays.asList("uuid", "creationDate", "changeDate"));
+	/** Copied by AdoDtoHelper itself in both directions, not by the per-entity helpers. */
+	private static final Set<String> HANDLED_BY_BASE_CLASS = new LinkedHashSet<>(Arrays.asList("uuid", "creationDate", "changeDate"));
 
-	private static final String[] CANDIDATE_SOURCE_ROOTS = {
-		"src/main/java",
-		"app/src/main/java",
-		"sormas-app/app/src/main/java",
-		"../sormas-app/app/src/main/java" };
+	static final String FROM_DTO = "fillInnerFromDto";
+	static final String FROM_ADO = "fillInnerFromAdo";
 
 	private SyncMappingHarness() {
 	}
 
 	public static SyncMapping analyse(Class<? extends AdoDtoHelper<?, ?>> helperClass) {
-		return analyse(helperClass, readSource(helperClass));
-	}
-
-	/**
-	 * Same analysis against source supplied directly rather than read from disk.
-	 *
-	 * <p>
-	 * This exists so the harness can be tested against input with a known answer. Asserting against
-	 * production helpers only proves the harness agrees with whoever wrote the test; feeding it source
-	 * whose mapping is known by construction proves it reports the right fields, and that removing a
-	 * copy line changes the answer.
-	 */
-	static SyncMapping analyse(Class<? extends AdoDtoHelper<?, ?>> helperClass, String source) {
 
 		Class<?>[] types = readGenericTypes(helperClass);
 		Class<?> entityClass = types[0];
 		Class<?> dtoClass = types[1];
 
-		Method fromDto = readMethod(helperClass, source, "fillInnerFromDto");
-		Method fromAdo = readMethod(helperClass, source, "fillInnerFromAdo");
+		Bytecode bytecode = read(helperClass);
 
 		Set<String> entityFields = declaredDataFields(entityClass);
 		Set<String> dtoFields = declaredDataFields(dtoClass);
@@ -100,22 +90,20 @@ public final class SyncMappingHarness {
 		Set<String> shared = new LinkedHashSet<>(entityFields);
 		shared.retainAll(dtoFields);
 
-		boolean pushSupported = !fromAdo.body.contains("UnsupportedOperationException");
-
 		return new SyncMapping(
 			entityClass,
 			dtoClass,
 			entityFields,
 			dtoFields,
-			assignedFields(fromDto, shared),
-			assignedFields(fromAdo, shared),
-			pushSupported);
+			bytecode.settersCalledOn(FROM_DTO, entityClass, shared),
+			bytecode.settersCalledOn(FROM_ADO, dtoClass, shared),
+			!bytecode.throwsUnsupported(FROM_ADO));
 	}
 
 	/**
 	 * Takes the entity and DTO types from {@code extends AdoDtoHelper<Entity, Dto>}. Reflection on the
-	 * generic superclass is exact, unlike reading the method signature, where parameter order and
-	 * naming differ between helpers.
+	 * generic superclass is exact, unlike reading a method signature, where parameter order and naming
+	 * differ between helpers.
 	 */
 	private static Class<?>[] readGenericTypes(Class<?> helperClass) {
 
@@ -128,7 +116,7 @@ public final class SyncMappingHarness {
 
 		Type[] args = ((ParameterizedType) superType).getActualTypeArguments();
 		if (args.length != 2 || !(args[0] instanceof Class) || !(args[1] instanceof Class)) {
-			throw new IllegalStateException(helperClass.getName() + " has unexpected AdoDtoHelper type arguments: " + java.util.Arrays.toString(args));
+			throw new IllegalStateException(helperClass.getName() + " has unexpected AdoDtoHelper type arguments: " + Arrays.toString(args));
 		}
 
 		return new Class<?>[] {
@@ -138,17 +126,14 @@ public final class SyncMappingHarness {
 
 	/**
 	 * Fields declared on the class itself. Inherited fields are excluded deliberately: uuid,
-	 * creationDate and changeDate are copied by AdoDtoHelper, not by the per-entity helper, so
-	 * counting them would report gaps that are not gaps.
+	 * creationDate and changeDate are copied by AdoDtoHelper, not by the per-entity helper, so counting
+	 * them would report gaps that are not gaps.
 	 */
 	private static Set<String> declaredDataFields(Class<?> type) {
 
 		Set<String> names = new LinkedHashSet<>();
 		for (Field field : type.getDeclaredFields()) {
-			if (field.isSynthetic()) {
-				continue;
-			}
-			if (Modifier.isStatic(field.getModifiers())) {
+			if (field.isSynthetic() || Modifier.isStatic(field.getModifiers())) {
 				continue; // serialVersionUID and constants are not data
 			}
 			if (HANDLED_BY_BASE_CLASS.contains(field.getName())) {
@@ -159,90 +144,118 @@ public final class SyncMappingHarness {
 		return names;
 	}
 
-	private static String readSource(Class<?> helperClass) {
+	private static Bytecode read(Class<?> helperClass) {
 
-		String relative = helperClass.getName().replace('.', '/') + ".java";
-		for (String root : CANDIDATE_SOURCE_ROOTS) {
-			Path candidate = Paths.get(root, relative);
-			if (Files.isReadable(candidate)) {
-				try {
-					return new String(Files.readAllBytes(candidate), StandardCharsets.UTF_8);
-				} catch (IOException e) {
-					throw new UncheckedIOException("Could not read " + candidate, e);
+		String resource = '/' + helperClass.getName().replace('.', '/') + ".class";
+		try (InputStream in = helperClass.getResourceAsStream(resource)) {
+			if (in == null) {
+				throw new IllegalStateException(
+					"Could not find the compiled class for " + helperClass.getName() + " at " + resource
+						+ ". The harness reads build output, so the module must be compiled before these tests run.");
+			}
+			Bytecode bytecode = new Bytecode(helperClass);
+			new ClassReader(in).accept(bytecode, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+			bytecode.verifyBothDirectionsArePresent();
+			return bytecode;
+		} catch (IOException e) {
+			throw new UncheckedIOException("Could not read the compiled class for " + helperClass.getName(), e);
+		}
+	}
+
+	/** Collects, per direction, which setters were called and on what type. */
+	private static final class Bytecode extends ClassVisitor {
+
+		private final Class<?> helperClass;
+		private final Map<String, Set<String>> callsByMethod = new LinkedHashMap<>();
+		private final Set<String> throwsUnsupported = new LinkedHashSet<>();
+
+		private Bytecode(Class<?> helperClass) {
+			super(Opcodes.ASM9);
+			this.helperClass = helperClass;
+		}
+
+		@Override
+		public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+
+			if (!FROM_DTO.equals(name) && !FROM_ADO.equals(name)) {
+				return null;
+			}
+
+			final String method = name;
+			final Set<String> calls = callsByMethod.computeIfAbsent(method, key -> new LinkedHashSet<>());
+
+			return new MethodVisitor(Opcodes.ASM9) {
+
+				@Override
+				public void visitMethodInsn(int opcode, String owner, String callee, String methodDescriptor, boolean isInterface) {
+					if (callee.startsWith("set")) {
+						// owner is the type the setter was called on, which is what separates the
+						// two directions and rejects a copy written onto the wrong object.
+						calls.add(owner + '#' + callee);
+					}
+				}
+
+				@Override
+				public void visitTypeInsn(int opcode, String type) {
+					if (opcode == Opcodes.NEW && "java/lang/UnsupportedOperationException".equals(type)) {
+						throwsUnsupported.add(method);
+					}
+				}
+			};
+		}
+
+		/**
+		 * Both directions must be declared on the helper itself. A compiled class with only one of them
+		 * cannot be analysed, and must fail loudly rather than be reported as having no gaps.
+		 */
+		private void verifyBothDirectionsArePresent() {
+			for (String required : new String[] {
+				FROM_DTO,
+				FROM_ADO }) {
+				if (!callsByMethod.containsKey(required)) {
+					throw new IllegalStateException(
+						helperClass.getName() + " has no " + required + " of its own in the compiled class, so it cannot be analysed. "
+							+ "Extend the harness rather than excluding it.");
 				}
 			}
 		}
-		throw new IllegalStateException(
-			"Could not find the source of " + helperClass.getName() + ". Looked for " + relative + " under " + java.util.Arrays.toString(CANDIDATE_SOURCE_ROOTS)
-				+ " relative to " + Paths.get("").toAbsolutePath() + ". The harness reads source because helper methods cannot be executed without a database.");
-	}
 
-	/** Pulls out one method's body and the name of its first parameter, which is always the target. */
-	private static Method readMethod(Class<?> helperClass, String source, String methodName) {
-
-		Matcher signature = Pattern.compile("void\\s+" + Pattern.quote(methodName) + "\\s*\\(([^)]*)\\)\\s*\\{").matcher(source);
-		if (!signature.find()) {
-			throw new IllegalStateException(
-				helperClass.getName() + " has no " + methodName + " that the harness can read. It may be formatted unusually. "
-					+ "Fix the harness rather than excluding this helper.");
+		private boolean throwsUnsupported(String method) {
+			return throwsUnsupported.contains(method);
 		}
 
-		String firstParameter = firstParameterName(helperClass, methodName, signature.group(1));
-		return new Method(firstParameter, bodyFrom(helperClass, methodName, source, signature.end() - 1));
-	}
+		/**
+		 * Of the fields given, those the method assigns on the target type. A setter inherited from a
+		 * superclass still counts, because the call is made on the target object either way.
+		 */
+		private Set<String> settersCalledOn(String method, Class<?> targetType, Set<String> candidates) {
 
-	private static String firstParameterName(Class<?> helperClass, String methodName, String parameterList) {
+			Set<String> calls = callsByMethod.getOrDefault(method, Collections.emptySet());
+			Set<String> assigned = new LinkedHashSet<>();
 
-		String first = parameterList.split(",")[0].trim();
-		String[] parts = first.split("\\s+");
-		if (parts.length < 2) {
-			throw new IllegalStateException(helperClass.getName() + '.' + methodName + " has an unreadable parameter list: " + parameterList);
-		}
-		return parts[parts.length - 1];
-	}
-
-	private static String bodyFrom(Class<?> helperClass, String methodName, String source, int openingBrace) {
-
-		int depth = 0;
-		for (int i = openingBrace; i < source.length(); i++) {
-			char c = source.charAt(i);
-			if (c == '{') {
-				depth++;
-			} else if (c == '}') {
-				depth--;
-				if (depth == 0) {
-					return source.substring(openingBrace, i + 1);
+			for (String field : candidates) {
+				String setter = "set" + Character.toUpperCase(field.charAt(0)) + field.substring(1);
+				for (String call : calls) {
+					int split = call.indexOf('#');
+					if (!call.substring(split + 1).equals(setter)) {
+						continue;
+					}
+					if (isTargetOrSuperclassOf(call.substring(0, split).replace('/', '.'), targetType)) {
+						assigned.add(field);
+						break;
+					}
 				}
 			}
+			return assigned;
 		}
-		throw new IllegalStateException(helperClass.getName() + '.' + methodName + " has unbalanced braces, so its body cannot be read.");
-	}
 
-	/** Of the fields given, those the method assigns on its target parameter. */
-	private static Set<String> assignedFields(Method method, Set<String> candidates) {
-
-		Set<String> assigned = new LinkedHashSet<>();
-		for (String field : candidates) {
-			String setter = Pattern.quote(method.target) + "\\s*\\.\\s*set" + Pattern.quote(capitalise(field)) + "\\s*\\(";
-			if (Pattern.compile(setter).matcher(method.body).find()) {
-				assigned.add(field);
+		private boolean isTargetOrSuperclassOf(String owner, Class<?> targetType) {
+			for (Class<?> type = targetType; type != null; type = type.getSuperclass()) {
+				if (type.getName().equals(owner)) {
+					return true;
+				}
 			}
-		}
-		return assigned;
-	}
-
-	private static String capitalise(String field) {
-		return Character.toUpperCase(field.charAt(0)) + field.substring(1);
-	}
-
-	private static final class Method {
-
-		private final String target;
-		final String body;
-
-		private Method(String target, String body) {
-			this.target = target;
-			this.body = body;
+			return false;
 		}
 	}
 }
