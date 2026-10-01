@@ -112,19 +112,36 @@ public class SyncMappingHarnessTest {
 		}
 	}
 
-	@Test
-	public void throwsRatherThanSkippingWhenItCannotReadAHelper() {
+	@SuppressWarnings("unchecked")
+	private static Class<? extends AdoDtoHelper<?, ?>> notAHelper() {
+		return (Class<? extends AdoDtoHelper<?, ?>>) (Class<?>) String.class;
+	}
 
+	@Test
+	public void throwsWhenTheClassIsNotAHelper() {
+
+		// Source is supplied so this reaches the type check rather than failing earlier on a missing
+		// file. Both failure modes matter, so they are tested separately.
 		try {
-			// Not a helper at all, so it has no AdoDtoHelper type arguments to read.
-			@SuppressWarnings("unchecked")
-			Class<? extends AdoDtoHelper<?, ?>> notAHelper = (Class<? extends AdoDtoHelper<?, ?>>) (Class<?>) String.class;
-			SyncMappingHarness.analyse(notAHelper);
+			SyncMappingHarness.analyse(notAHelper(), "class Whatever {}");
 			fail("expected the harness to throw, because skipping a helper it cannot read is how gaps get missed");
 		} catch (IllegalStateException expected) {
 			assertTrue(
-				"the message should say what to do about it, not just that it failed",
+				"the message should say what to do about it: " + expected.getMessage(),
 				expected.getMessage().contains("Do not skip it") || expected.getMessage().contains("cannot be determined"));
+		}
+	}
+
+	@Test
+	public void throwsWhenTheSourceCannotBeFound() {
+
+		try {
+			SyncMappingHarness.analyse(notAHelper());
+			fail("expected the harness to throw rather than quietly analysing nothing");
+		} catch (IllegalStateException expected) {
+			assertTrue(
+				"the message should name what it looked for: " + expected.getMessage(),
+				expected.getMessage().contains("Could not find the source"));
 		}
 	}
 
