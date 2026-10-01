@@ -73,12 +73,23 @@ public final class SyncMappingHarness {
 	}
 
 	public static SyncMapping analyse(Class<? extends AdoDtoHelper<?, ?>> helperClass) {
+		return analyse(helperClass, readSource(helperClass));
+	}
+
+	/**
+	 * Same analysis against source supplied directly rather than read from disk.
+	 *
+	 * <p>
+	 * This exists so the harness can be tested against input with a known answer. Asserting against
+	 * production helpers only proves the harness agrees with whoever wrote the test; feeding it source
+	 * whose mapping is known by construction proves it reports the right fields, and that removing a
+	 * copy line changes the answer.
+	 */
+	static SyncMapping analyse(Class<? extends AdoDtoHelper<?, ?>> helperClass, String source) {
 
 		Class<?>[] types = readGenericTypes(helperClass);
 		Class<?> entityClass = types[0];
 		Class<?> dtoClass = types[1];
-
-		String source = readSource(helperClass);
 
 		Method fromDto = readMethod(helperClass, source, "fillInnerFromDto");
 		Method fromAdo = readMethod(helperClass, source, "fillInnerFromAdo");

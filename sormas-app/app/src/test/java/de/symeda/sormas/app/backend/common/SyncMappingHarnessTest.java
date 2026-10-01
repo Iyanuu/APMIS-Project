@@ -5,6 +5,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.junit.Test;
 
 import de.symeda.sormas.api.campaign.CampaignDto;
@@ -98,7 +102,14 @@ public class SyncMappingHarnessTest {
 		// The two directions are separate hand written methods, so they can disagree. The harness
 		// must not collapse them into one answer.
 		assertEquals(mapping.getSharedFields().size(), mapping.getCopiedToEntity().size() + mapping.getNotCopiedToEntity().size());
-		assertEquals(mapping.getSharedFields().size(), mapping.getCopiedToDto().size() + mapping.getNotCopiedToDto().size());
+
+		// The push invariant only holds where push is supported. For a pull-only entity the gap set
+		// is deliberately empty, so copied + gap does not account for every shared field.
+		if (mapping.isPushSupported()) {
+			assertEquals(mapping.getSharedFields().size(), mapping.getCopiedToDto().size() + mapping.getNotCopiedToDto().size());
+		} else {
+			assertTrue(mapping.getNotCopiedToDto().isEmpty());
+		}
 	}
 
 	@Test
@@ -146,5 +157,104 @@ public class SyncMappingHarnessTest {
 
 		assertTrue(description.contains("Campaign"));
 		assertTrue("a gap report is not actionable without the direction", description.contains("no gaps") || description.contains("->"));
+	}
+
+	// --- Verification against input with a known answer -------------------------------------------
+	//
+	// Everything above checks the harness against production helpers, which only proves it agrees
+	// with whoever wrote the test. These feed it source whose mapping is known by construction, so a
+	// wrong answer is detectable. AreaDtoHelper is used because Area declares exactly two fields -
+	// name and externalId - which makes the expected sets small enough to state exhaustively.
+
+	private static String areaHelperSource(String fromDtoBody, String fromAdoBody) {
+		return "package de.symeda.sormas.app.backend.region;\n"
+			+ "public class AreaDtoHelper extends AdoDtoHelper<Area, AreaDto> {\n"
+			+ "  protected void fillInnerFromDto(Area area, AreaDto dto) {\n" + fromDtoBody + "  }\n"
+			+ "  protected void fillInnerFromAdo(AreaDto dto, Area area) {\n" + fromAdoBody + "  }\n"
+			+ "}\n";
+	}
+
+	private static Set<String> setOf(String... values) {
+		return new TreeSet<>(Arrays.asList(values));
+	}
+
+	@Test
+	public void reportsExactlyTheFieldsTheSourceCopies() {
+
+		SyncMapping mapping = SyncMappingHarness.analyse(
+			AreaDtoHelper.class,
+			areaHelperSource(
+				"    area.setName(dto.getName());\n",
+				"    dto.setExternalId(area.getExternalId());\n"));
+
+		assertEquals("Area declares name and externalId; nothing else is shared with AreaDto", setOf("externalId", "name"), mapping.getSharedFields());
+
+		assertEquals(setOf("name"), mapping.getCopiedToEntity());
+		assertEquals(setOf("externalId"), mapping.getNotCopiedToEntity());
+
+		assertEquals(setOf("externalId"), mapping.getCopiedToDto());
+		assertEquals(setOf("name"), mapping.getNotCopiedToDto());
+	}
+
+	@Test
+	public void noticesWhenACopyLineIsRemoved() {
+
+		String both = "    area.setName(dto.getName());\n    area.setExternalId(dto.getExternalId());\n";
+		String onlyName = "    area.setName(dto.getName());\n";
+		String push = "    dto.setName(area.getName());\n    dto.setExternalId(area.getExternalId());\n";
+
+		SyncMapping before = SyncMappingHarness.analyse(AreaDtoHelper.class, areaHelperSource(both, push));
+		SyncMapping after = SyncMappingHarness.analyse(AreaDtoHelper.class, areaHelperSource(onlyName, push));
+
+		assertEquals("with both lines present, nothing should be missing", setOf(), before.getNotCopiedToEntity());
+		assertEquals("removing the externalId line must be noticed", setOf("externalId"), after.getNotCopiedToEntity());
+
+		// The other direction is untouched, so the harness must not confuse the two.
+		assertEquals(setOf(), after.getNotCopiedToDto());
+	}
+
+	@Test
+	public void givesTheSameAnswerWhateverTheParametersAreCalled() {
+
+		SyncMapping named = SyncMappingHarness.analyse(
+			AreaDtoHelper.class,
+			areaHelperSource("    area.setName(dto.getName());\n", "    dto.setName(area.getName());\n"));
+
+		SyncMapping renamed = SyncMappingHarness.analyse(
+			AreaDtoHelper.class,
+			"package de.symeda.sormas.app.backend.region;\n"
+				+ "public class AreaDtoHelper extends AdoDtoHelper<Area, AreaDto> {\n"
+				+ "  protected void fillInnerFromDto(Area target, AreaDto source) {\n"
+				+ "    target.setName(source.getName());\n  }\n"
+				+ "  protected void fillInnerFromAdo(AreaDto t, Area s) {\n"
+				+ "    t.setName(s.getName());\n  }\n}\n");
+
+		assertEquals(named.getCopiedToEntity(), renamed.getCopiedToEntity());
+		assertEquals(named.getCopiedToDto(), renamed.getCopiedToDto());
+		assertEquals(setOf("name"), renamed.getCopiedToEntity());
+	}
+
+	@Test
+	public void doesNotCreditACopyOnTheWrongVariable() {
+
+		// Assigning the source rather than the target is a real mistake, and must not count as a copy.
+		SyncMapping mapping = SyncMappingHarness.analyse(
+			AreaDtoHelper.class,
+			areaHelperSource("    dto.setName(area.getName());\n", "    area.setName(dto.getName());\n"));
+
+		assertEquals("fillInnerFromDto assigned dto, not area, so nothing reached the entity", setOf(), mapping.getCopiedToEntity());
+		assertEquals("fillInnerFromAdo assigned area, not dto, so nothing reached the DTO", setOf(), mapping.getCopiedToDto());
+	}
+
+	@Test
+	public void treatsAnUnsupportedPushAsPullOnlyRatherThanAsGaps() {
+
+		SyncMapping mapping = SyncMappingHarness.analyse(
+			AreaDtoHelper.class,
+			areaHelperSource("    area.setName(dto.getName());\n", "    throw new UnsupportedOperationException();\n"));
+
+		assertFalse(mapping.isPushSupported());
+		assertTrue("a pull-only entity must report no push gaps, not two", mapping.getNotCopiedToDto().isEmpty());
+		assertEquals("the pull direction is still checked", setOf("externalId"), mapping.getNotCopiedToEntity());
 	}
 }
