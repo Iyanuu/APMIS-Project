@@ -17,7 +17,7 @@ name: Lint Code Base
 on:
   workflow_dispatch:
   pull_request:
-    branches: [development]
+    branches: [main, development]
 
 ###############
 # Set the Job #
@@ -50,7 +50,7 @@ jobs:
       - name: Lint Code Base
         uses: github/super-linter@v3.15.1
         env:
-          DEFAULT_BRANCH: development
+          DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_BASH: false
