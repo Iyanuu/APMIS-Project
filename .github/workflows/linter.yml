@@ -30,6 +30,7 @@ jobs:
     # ubuntu-20.04 runners were retired by GitHub; jobs requesting that label
     # are never scheduled and end up cancelled.
     runs-on: ubuntu-latest
+    timeout-minutes: 8
 
     ##################
     # Load all steps #
