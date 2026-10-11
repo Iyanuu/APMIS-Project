@@ -26,12 +26,14 @@ on:
       - 'sormas-app/**'
       - 'sormas-api/**'
       - '.github/workflows/sormas_app_ci.yml'
+      - 'sormas-rest/**'
   pull_request:
     branches: [development]
     paths:
       - 'sormas-app/**'
       - 'sormas-api/**'
       - '.github/workflows/sormas_app_ci.yml'
+      - 'sormas-rest/**'
 
 permissions:
   contents: read
