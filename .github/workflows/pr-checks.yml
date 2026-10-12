@@ -1,0 +1,89 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  validate-pr-title:
+    name: validate PR title
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Lint PR title
+        uses: amannn/action-semantic-pull-request@v5
+        id: lint_pr_title
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            test
+            ci
+            docs
+            chore
+            build
+            refactor
+          requireScope: false
+          subjectPattern: ^.+$
+          wip: false
+
+      - name: Comment on failure
+        if: always() && steps.lint_pr_title.outputs.error_message != null
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-title-lint-error
+          message: |
+            Thanks for opening this PR! 🎉
+
+            We require PR titles to follow **Conventional Commits**, since squash-merge uses this title as the commit message on `development`.
+
+            **Format:** `type(scope): summary`
+            **Allowed types:** `feat`, `fix`, `test`, `ci`, `docs`, `chore`, `build`, `refactor`
+
+            **Example:** `fix(auth): correct token refresh race condition`
+
+            Your current title:
+            > ${{ github.event.pull_request.title }}
+
+            ${{ steps.lint_pr_title.outputs.error_message }}
+
+      - name: Delete comment on success
+        if: steps.lint_pr_title.outputs.error_message == null
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-title-lint-error
+          delete: true
+
+  validate-branch-name:
+    name: validate branch name
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    steps:
+      - name: Check branch naming convention
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          PATTERN="^(test|ci|fix|docs|chore|feat)/.+"
+
+          if [[ "$HEAD_REF" =~ $PATTERN ]]; then
+            echo "Branch name '$HEAD_REF' follows convention."
+            exit 0
+          else
+            echo "::error::Branch '$HEAD_REF' does not follow our naming convention."
+            echo ""
+            echo "Our branches must start with one of: test/, ci/, fix/, docs/, chore/, feat/"
+            echo ""
+            echo "Example: fix/login-null-check"
+            echo ""
+            echo "Rename your branch, e.g.:"
+            echo "  git branch -m $HEAD_REF fix/$HEAD_REF"
+            echo "  git push origin -u fix/$HEAD_REF"
+            echo "  git push origin --delete $HEAD_REF"
+            exit 1
+          fi

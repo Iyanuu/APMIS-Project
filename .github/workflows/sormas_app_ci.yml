@@ -21,13 +21,13 @@ env:
 on:
   workflow_dispatch:
   push:
-    branches: [development, master]
+    branches: [main, development, master]
     paths:
       - 'sormas-app/**'
       - 'sormas-api/**'
       - '.github/workflows/sormas_app_ci.yml'
   pull_request:
-    branches: [development]
+    branches: [main, development]
     paths:
       - 'sormas-app/**'
       - 'sormas-api/**'
