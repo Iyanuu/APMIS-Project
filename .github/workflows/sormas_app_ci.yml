@@ -21,14 +21,14 @@ env:
 on:
   workflow_dispatch:
   push:
-    branches: [development, master]
+    branches: [main, development, master]
     paths:
       - 'sormas-app/**'
       - 'sormas-api/**'
       - '.github/workflows/sormas_app_ci.yml'
       - 'sormas-rest/**'
   pull_request:
-    branches: [development]
+    branches: [main, development]
     paths:
       - 'sormas-app/**'
       - 'sormas-api/**'
@@ -43,6 +43,7 @@ jobs:
   test:
     name: android build and unit tests
     runs-on: ubuntu-latest
+    timeout-minutes: 12
 
     steps:
       - name: Checkout repository
