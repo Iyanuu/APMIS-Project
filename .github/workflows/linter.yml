@@ -17,7 +17,11 @@ name: Lint Code Base
 on:
   workflow_dispatch:
   pull_request:
-    branches: [main, development]
+    branches: [development]
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+    cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 ###############
 # Set the Job #
@@ -30,7 +34,6 @@ jobs:
     # ubuntu-20.04 runners were retired by GitHub; jobs requesting that label
     # are never scheduled and end up cancelled.
     runs-on: ubuntu-latest
-    timeout-minutes: 8
 
     ##################
     # Load all steps #
@@ -51,7 +54,7 @@ jobs:
       - name: Lint Code Base
         uses: github/super-linter@v3.15.1
         env:
-          DEFAULT_BRANCH: main
+          DEFAULT_BRANCH: development
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_BASH: false
