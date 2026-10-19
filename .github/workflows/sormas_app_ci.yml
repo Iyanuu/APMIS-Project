@@ -33,6 +33,10 @@ on:
       - 'sormas-api/**'
       - '.github/workflows/sormas_app_ci.yml'
 
+  concurrency:
+    group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+    cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
   security-events: write
