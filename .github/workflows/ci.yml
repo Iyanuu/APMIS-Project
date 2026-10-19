@@ -9,9 +9,9 @@ env:
 
 on:
   push:
-    branches: [ development, master ]
+    branches: [ main, development, master ]
   pull_request:
-    branches: [ development ]
+    branches: [ main, development ]
 
   concurrency:
     group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
@@ -21,6 +21,7 @@ jobs:
   test:
     name: mvn verify
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository (with token)
