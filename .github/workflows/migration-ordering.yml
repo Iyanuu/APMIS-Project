@@ -1,0 +1,33 @@
+# Verifies that the database migration counters stay ordered and append-only.
+# See docs/DB_MIGRATIONS.md for the rules this check enforces.
+
+name: Database Migration Ordering/Duplication Check
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migration-ordering-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  migration-ordering:
+    name: database migration ordering
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          # The base commit is needed to detect renumbered or dropped versions.
+          fetch-depth: 0
+
+      - name: Check migration ordering
+        env:
+          # Empty for workflow_dispatch, which skips the base branch comparison.
+          BASE_REF: ${{ github.event.pull_request.base.sha }}
+        run: python3 .github/scripts/check_migration_ordering.py --base-ref "$BASE_REF"

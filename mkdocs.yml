@@ -30,6 +30,7 @@ nav:
   - I18n: I18N.md
   - Security: SECURITY.md
   - Secret Scanning: SECRET_SCANNING.md
+  - Database Migrations: DB_MIGRATIONS.md
   - Customization: SERVER_CUSTOMIZATION.md
   - Development Setup: SERVER_DEV_SETUP.md
   - Setup: SERVER_SETUP.md
