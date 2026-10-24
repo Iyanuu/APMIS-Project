@@ -2,11 +2,17 @@
 # End-to-end tests of the Android app on an emulator (#81).
 #
 # This is not a required check. It runs by hand, and on pull requests that change the
-# end-to-end tests or this file. A nightly run against staging follows in a later change.
+# end-to-end tests or this file.
 #
 # Only the tests in the package de.symeda.sormas.app.e2e run. The other instrumented tests
 # under sormas-app/app/src/androidTest test screens that APMIS does not use, but they must
 # still compile, because Gradle builds the folder as one unit.
+#
+# Two jobs, and only one of them runs:
+# - "app end-to-end tests on staging" runs in the Iyanuu/APMIS-Project fork. It uses the
+#   Staging environment, which holds the test user, and it runs all end-to-end tests.
+# - "app end-to-end tests" runs in other repositories and on pull requests from other forks.
+#   They do not get the secrets, so the tests that need a server are skipped.
 
 name: App E2E
 
@@ -33,6 +39,9 @@ concurrency:
 jobs:
   e2e:
     name: app end-to-end tests
+    if: >-
+      github.repository != 'Iyanuu/APMIS-Project' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -113,6 +122,163 @@ jobs:
             adb logcat -c || true
             ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.package=de.symeda.sormas.app.e2e --no-daemon --stacktrace || (adb logcat -d > ../logcat.txt; exit 1)
             adb logcat -d > ../logcat.txt
+
+      - name: Upload the test report and logcat
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-e2e-report
+          path: |
+            sormas-app/app/build/reports/androidTests/
+            sormas-app/app/build/outputs/androidTest-results/
+            logcat.txt
+          if-no-files-found: ignore
+          retention-days: 14
+
+  e2e-staging:
+    name: app end-to-end tests on staging
+    if: >-
+      github.repository == 'Iyanuu/APMIS-Project' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # The Staging environment holds the secrets TEST_USER and APP_PASS.
+    environment: Staging
+    env:
+      STAGING_REST_URL: https://test.afghanistan-apmis.com/sormas-rest/
+      TEST_USER: ${{ secrets.TEST_USER }}
+      APP_PASS: ${{ secrets.APP_PASS }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Check that staging answers and accepts this app version
+        # Fails early, with a clear message, when the runner cannot reach staging, the login
+        # is wrong, or staging does not accept the version of this app.
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o version.txt -w '%{http_code}' -u "$TEST_USER:$APP_PASS" "${STAGING_REST_URL}info/version")
+          if [ "$code" != "200" ]; then
+            echo "::error::Staging answered HTTP $code for info/version. Check the URL, the test user and the password."
+            exit 1
+          fi
+          echo "Staging server version: $(cat version.txt)"
+          app_version=$(grep -m1 -oE '<version>[^<]+' sormas-base/pom.xml | sed 's/<version>//')
+          compatibility=$(curl -sS -u "$TEST_USER:$APP_PASS" "${STAGING_REST_URL}info/checkcompatibility?appVersion=${app_version}")
+          echo "Compatibility of app version ${app_version}: ${compatibility}"
+          if ! echo "$compatibility" | grep -qE '^"?COMPATIBLE"?$'; then
+            echo "::error::Staging does not accept app version ${app_version}. The login on the emulator would fail."
+            exit 1
+          fi
+
+      - name: Encode the password for the device
+        # The device shell can change special characters in an argument, but not the characters of base64.
+        # The encoded value is also masked in the logs.
+        run: |
+          encoded=$(printf '%s' "$APP_PASS" | base64 -w0)
+          echo "::add-mask::$encoded"
+          echo "APP_PASS_BASE64=$encoded" >> "$GITHUB_ENV"
+
+      - name: Set up JDK ${{ env.JAVA }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA }}
+          distribution: 'zulu'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-java-${{ env.JAVA }}-m2-${{ hashFiles('**/pom.xml', '**/*.pom') }}
+          restore-keys: ${{ runner.os }}-java-${{ env.JAVA }}-m2
+
+      - name: Install sormas-api into the local Maven repository
+        working-directory: ./sormas-base
+        run: mvn install -pl :sormas-api -am -DskipTests=true -B -ntp
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('sormas-app/**/*.gradle', 'sormas-app/**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm
+
+      - name: Cache the emulator image
+        id: avd-cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ env.API_LEVEL }}-google_apis-x86_64
+
+      - name: Make the emulator image and a snapshot for the cache
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.API_LEVEL }}
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "The emulator snapshot is ready for the cache."
+
+      - name: Run the end-to-end tests against staging
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.API_LEVEL }}
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-boot-timeout: 900
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          working-directory: ./sormas-app
+          script: |
+            chmod +x ./gradlew
+            adb logcat -c || true
+            ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.package=de.symeda.sormas.app.e2e "-Pandroid.testInstrumentationRunnerArguments.serverUrl=$STAGING_REST_URL" "-Pandroid.testInstrumentationRunnerArguments.username=$TEST_USER" "-Pandroid.testInstrumentationRunnerArguments.passwordBase64=$APP_PASS_BASE64" --no-daemon --stacktrace || (adb logcat -d > ../logcat.txt; exit 1)
+            adb logcat -d > ../logcat.txt
+
+      - name: Remove the login from the logcat and the reports
+        # GitHub masks secrets in the logs, but not in the artifacts. This repository is public,
+        # so its artifacts are public too.
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import base64, os, pathlib
+          user, password = os.environ["TEST_USER"], os.environ["APP_PASS"]
+          secrets = [s for s in (
+              base64.b64encode(f"{user}:{password}".encode()).decode(),
+              os.environ.get("APP_PASS_BASE64", ""),
+              password,
+          ) if s]
+          paths = [pathlib.Path("logcat.txt")]
+          for folder in ("sormas-app/app/build/reports/androidTests", "sormas-app/app/build/outputs/androidTest-results"):
+              paths += [p for p in pathlib.Path(folder).rglob("*") if p.is_file()]
+          for path in paths:
+              if not path.exists():
+                  continue
+              text = path.read_text(errors="replace")
+              cleaned = text
+              for secret in secrets:
+                  cleaned = cleaned.replace(secret, "***")
+              if cleaned != text:
+                  path.write_text(cleaned)
+                  print(f"Removed the login from {path}")
+          PY
 
       - name: Upload the test report and logcat
         if: always()
