@@ -111,6 +111,19 @@ The cause is a change in how `CampaignFormData` converts the form values to JSON
 
 The last three tests record values that change type: a whole number comes back as a decimal, `YesNo` comes back as text, and a `Date` comes back as text. If one of these tests fails, the conversion changed. Make sure that the change is intended.
 
+### Calculated fields (`CampaignFormDataFragmentUtilsTest`)
+
+Some campaign form fields have an expression, for example `a + b`. This test checks the value that a calculated field stores, for example `"15"` for a number field and `"0.33"` for a decimal result. It also checks the helpers that find linked range fields. A failure gives the stored value:
+
+```text
+Expected: is "15"
+     but: was "15.0"
+```
+
+The cause is a change in `CampaignFormDataFragmentUtils` (`getExpressionValue`, `applyExpressionToEntry` or `recalculateAllExpressions`), or in `ExpressionProcessorUtils` in `sormas-api`.
+
+Some tests have `@Ignore("#102 ...")`. They show values that are wrong today, for example `5.02.0` after an empty field in a sum. When you fix #102, remove `@Ignore`.
+
 ### Push payload (`CampaignFormDataPushPayloadTest`)
 
 This test checks that each saved value is in the JSON that the phone sends to the server. A failure names the entry:
@@ -171,6 +184,7 @@ cd sormas-app
 | `sormas-api/src/test/java` | Server unit tests, for example `VersionHelperTest`. `mvn verify` runs them. |
 | `sormas-app/app/src/test/java/.../backend/common` | The sync mapping harness and its own tests. |
 | `sormas-app/app/src/test/java/.../backend/campaign` | The campaign tests: sync mapping, save and reload, push payload. |
+| `sormas-app/app/src/test/java/.../campaign` | The campaign form tests: calculated fields and linked range fields. |
 | `sormas-app/app/src/androidTest/java/.../e2e` | The end-to-end tests that run on an emulator. |
 
 The other files in `sormas-app/app/src/androidTest` are old SORMAS tests for screens that APMIS does not use. They must compile, but they do not run.
