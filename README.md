@@ -39,7 +39,8 @@ flowchart LR
 
 **1. We keep our copy current.** `development` is updated from the APMIS project regularly. Because nobody edits it, this never causes a conflict — it simply catches up.
 
-**2. We bring their changes into `main`.** When an update adds commits to `development`, one pull request from `development` into `main` brings them in. We review the APMIS changes as one group, and we merge with a merge commit. Thus, each feature pull request shows only its own change. The [step by step guide](docs/TEAM_WORKFLOW.md#if-development-moved-forward-bring-the-changes-into-main) gives the commands.
+**2. We bring their changes into `main`.** When an update adds commits to `development`, one pull request from `development` into `main` brings them in. We review the APMIS changes as one group, and we merge with a merge commit.
+Thus, each feature pull request shows only its own change. The [step by step guide](docs/TEAM_WORKFLOW.md#if-development-moved-forward-bring-the-changes-into-main) gives the commands.
 
 **3. You start your branch from `development`.** Not from `main`. This matters, and the next section explains why.
 
