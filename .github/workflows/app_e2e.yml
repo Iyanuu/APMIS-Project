@@ -4,9 +4,9 @@
 # This is not a required check. It runs by hand, and on pull requests that change the
 # end-to-end tests or this file. A nightly run against staging follows in a later change.
 #
-# Only the tests in the package de.symeda.sormas.app.e2e run. The other instrumented tests
-# under sormas-app/app/src/androidTest test screens that APMIS does not use, but they must
-# still compile, because Gradle builds the folder as one unit.
+# All the instrumented tests in sormas-app/app/src/androidTest run: the end-to-end tests in
+# de.symeda.sormas.app.e2e, and the old tests of the app database and settings. The old tests
+# use TestHelper, which makes a test database on the device, so they need no server.
 
 name: App E2E
 
@@ -97,7 +97,7 @@ jobs:
           disable-animations: false
           script: echo "The emulator snapshot is ready for the cache."
 
-      - name: Run the end-to-end tests
+      - name: Run the device tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ env.API_LEVEL }}
@@ -111,7 +111,7 @@ jobs:
           script: |
             chmod +x ./gradlew
             adb logcat -c || true
-            ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.package=de.symeda.sormas.app.e2e --no-daemon --stacktrace || (adb logcat -d > ../logcat.txt; exit 1)
+            ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.package=de.symeda.sormas.app --no-daemon --stacktrace || (adb logcat -d > ../logcat.txt; exit 1)
             adb logcat -d > ../logcat.txt
 
       - name: Upload the test report and logcat
