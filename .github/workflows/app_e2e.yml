@@ -110,7 +110,7 @@ jobs:
           working-directory: ./sormas-app
           script: |
             chmod +x ./gradlew
-            adb logcat -c
+            adb logcat -c || true
             ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.package=de.symeda.sormas.app.e2e --no-daemon --stacktrace || (adb logcat -d > ../logcat.txt; exit 1)
             adb logcat -d > ../logcat.txt
 
