@@ -27,6 +27,8 @@ on:
       - 'sormas-api/**'
       - '.github/workflows/sormas_app_ci.yml'
       - 'sormas-rest/**'
+      # The parent POM of sormas-api. It sets the Java version and the library versions.
+      - 'sormas-base/pom.xml'
   pull_request:
     branches: [main, development]
     # No paths filter here. The "android gate" job must report on every pull request,
@@ -60,6 +62,7 @@ jobs:
               - 'sormas-api/**'
               - '.github/workflows/sormas_app_ci.yml'
               - 'sormas-rest/**'
+              - 'sormas-base/pom.xml'
 
   test:
     name: android build and unit tests
