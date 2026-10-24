@@ -153,9 +153,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Check that staging answers and accepts this app version
+      - name: Check that staging answers and runs the same version as this build
         # Fails early, with a clear message, when the runner cannot reach staging, the login
-        # is wrong, or staging does not accept the version of this app.
+        # is not valid for the REST API, or staging runs a different version. The app logs in
+        # only when its version is exactly the server version (matchExactVersion in
+        # LoginActivity and RetroProvider.matchAppAndApiVersions).
         run: |
           set -euo pipefail
           code=$(curl -sS -o version.txt -w '%{http_code}' -u "$TEST_USER:$APP_PASS" "${STAGING_REST_URL}info/version")
@@ -169,12 +171,11 @@ jobs:
             echo "::error::Staging answered HTTP $code for info/version. Check the URL, the test user and the password."
             exit 1
           fi
-          echo "Staging server version: $(cat version.txt)"
+          server_version=$(tr -d '"[:space:]' < version.txt)
           app_version=$(grep -m1 -oE '<version>[^<]+' sormas-base/pom.xml | sed 's/<version>//')
-          compatibility=$(curl -sS -u "$TEST_USER:$APP_PASS" "${STAGING_REST_URL}info/checkcompatibility?appVersion=${app_version}")
-          echo "Compatibility of app version ${app_version}: ${compatibility}"
-          if ! echo "$compatibility" | grep -qE '^"?COMPATIBLE"?$'; then
-            echo "::error::Staging does not accept app version ${app_version}. The login on the emulator would fail."
+          echo "Staging server version: ${server_version}. Version of this build: ${app_version}."
+          if [ "$server_version" != "$app_version" ]; then
+            echo "::error::Staging runs version ${server_version}, but this build is version ${app_version}. The app logs in only when the two versions are the same. Deploy this version to staging first."
             exit 1
           fi
 
