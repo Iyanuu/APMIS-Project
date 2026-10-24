@@ -1,8 +1,11 @@
 package com.cinoteck.application.views.about;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Properties;
 
 import com.cinoteck.application.UserProvider;
 import com.cinoteck.application.views.MainLayout;
@@ -168,6 +171,8 @@ public class AboutView extends VerticalLayout {
 		
 		buttonsLayout.add(getUserGuide, getTechnicalGuide, getMobileGuide,exportJsonGloassary, excelLink);
 		
+
+		
 		
 		VerticalLayout releaseDetailsLayout = new VerticalLayout();
 		Paragraph versionNum = new Paragraph(I18nProperties.getCaption(Captions.apmisVersionNumber));
@@ -184,7 +189,129 @@ public class AboutView extends VerticalLayout {
 		releaseDetailsLayout.getStyle().set("padding-left", "90px !important");
 		releaseDetailsLayout.setWidth("100%");
 //		releaseDetailsLayout.add(versionNum, releaseDate);
-		add(buttonsLayout, releaseDetailsLayout);
+		add(buttonsLayout, releaseDetailsLayout, createMobileAppDownloadLayout());
 
+	}
+	
+	private Div createMobileAppDownloadLayout() {
+
+	    Div mobileAppCard = new Div();
+
+	    mobileAppCard.getStyle()
+//	            .set("width", "100%")
+	            .set("box-sizing", "border-box")
+	            .set("background-color", "#f3f4f6")
+	            .set("border-radius", "0")
+	            .set("padding", "24px 30px")
+	            .set("margin-top", "20px")
+	    .set("margin-left", "3.5%");
+
+	    HorizontalLayout cardContent = new HorizontalLayout();
+
+	    cardContent.setWidthFull();
+	    cardContent.setSpacing(true);
+	    cardContent.setPadding(false);
+//	    cardContent.setAlignItems(Alignment.CENTER);
+
+	    /*
+	     * Mobile Icon Container
+	     */
+	    Div iconContainer = new Div();
+
+	    iconContainer.getStyle()
+	            .set("width", "52px")
+	            .set("height", "52px")
+	            .set("min-width", "52px")
+	            .set("background-color", "#0D6938")
+	            .set("border-radius", "10px")
+	            .set("display", "flex")
+	            .set("align-items", "center")
+	            .set("justify-content", "center")
+	            .set("margin-right", "16px");
+
+	    Icon mobileIcon = VaadinIcon.MOBILE.create();
+
+	    mobileIcon.getStyle()
+	            .set("width", "25px")
+	            .set("height", "25px")
+	            .set("color", "#31577f");
+
+	    iconContainer.add(mobileIcon);
+
+	    /*
+	     * Text Section
+	     */
+	    VerticalLayout textLayout = new VerticalLayout();
+
+	    textLayout.setPadding(false);
+	    textLayout.setSpacing(false);
+	    textLayout.setWidthFull();
+
+	    H3 title = new H3("Get the APMIS mobile app");
+
+	    title.getStyle()
+	            .set("margin", "0")
+	            .set("font-size", "20px")
+	            .set("font-weight", "600")
+	            .set("color", "#2d3436");
+
+	    Paragraph description = new Paragraph(
+	            "Download the app to collect campaign data in the field, even offline.");
+
+	    description.getStyle()
+	            .set("margin", "4px 0 0 0")
+	            .set("font-size", "16px")
+	            .set("color", "#555");
+
+	    /*
+	     * Download Button
+	     */
+	    Button downloadMobileApp = new Button("Download APMIS Mobile App");
+
+	    downloadMobileApp.setIcon(VaadinIcon.DOWNLOAD.create());
+
+	    downloadMobileApp.getStyle()
+	            .set("margin-top", "16px")
+	            .set("font-size", "16px")
+	            .set("font-weight", "500");
+
+	    downloadMobileApp.addClickListener(event -> {
+
+	        String version = getApplicationVersion();
+
+	        String apkUrl = "/downloads/apmis-"
+	                + version
+	                + "-release.apk";
+
+	        UI.getCurrent().getPage().open(apkUrl, "_blank");
+	    });
+
+	    textLayout.add(title, description);
+
+	    cardContent.add(iconContainer, textLayout, downloadMobileApp);
+
+	    mobileAppCard.add(cardContent);
+
+	    return mobileAppCard;
+	}
+	
+	private String getApplicationVersion() {
+
+	    Properties properties = new Properties();
+
+	    try (InputStream inputStream = getClass()
+	            .getClassLoader()
+	            .getResourceAsStream("application-version.properties")) {
+
+	        if (inputStream != null) {
+	            properties.load(inputStream);
+	            return properties.getProperty("app.version");
+	        }
+
+	    } catch (IOException e) {
+	        throw new RuntimeException("Unable to read application version", e);
+	    }
+
+	    throw new RuntimeException("Application version not found");
 	}
 }

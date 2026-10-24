@@ -26,6 +26,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.grid.Grid.MultiSortPriority;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.dataview.GridListDataView;
@@ -151,7 +152,9 @@ public class FormBuilderView extends VerticalLayout {
 		formType.setItems(CampaignPhase.values());
 		formType.setClearButtonVisible(true);
 		formAccess = new ComboBox<>("Form Access");
-		formAccess.setItems(FormAccess.values());
+		formAccess.setItems(Arrays.stream(FormAccess.values())
+                .filter(value -> value != FormAccess.MODALITY_PRE  && value != FormAccess.MODALITY_POST && value != FormAccess.EAG)
+                .collect(Collectors.toList()));
 		formAccess.setClearButtonVisible(true);
 		modality = new ComboBox<>("Modality");
 		modality.setItems(Modality.values());
@@ -336,8 +339,10 @@ public class FormBuilderView extends VerticalLayout {
 		grid.setColumnReorderingAllowed(true);
 
 		grid.addColumn(CampaignFormMetaDto.FORM_NAME).setHeader("Form Name").setSortable(true).setResizable(true);
-		grid.addColumn(CampaignFormMetaDto.FORM_CATEGORY).setHeader("Form Category").setSortable(true)
-				.setResizable(true);
+//		grid.addColumn(CampaignFormMetaDto.FORM_CATEGORY).setHeader("Form Category").setSortable(true)
+//				.setResizable(true);
+		grid.addColumn(item ->  item.getFormCategory() != null ? item.getFormCategory().getDisplayName() : "").setHeader("Form Category").setSortable(true).setResizable(true);
+		
 		grid.addColumn(CampaignFormMetaDto.FORM_TYPE).setHeader("Campaign Phase").setSortable(true).setResizable(true);
 		grid.addColumn(CampaignFormMetaDto::getModality).setHeader("Modality").setSortable(true).setResizable(true);
 //		grid.addColumn(creationDateRenderer).setHeader("Creation Date").setSortable(true).setResizable(true);

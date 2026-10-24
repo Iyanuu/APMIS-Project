@@ -28,4 +28,8 @@ public class DaoException extends Exception {
 	public DaoException(Exception cause) {
 		super(cause.getLocalizedMessage(), cause);
 	}
+
+	public DaoException(String message, Exception cause) {
+		super(message, cause);
+	}
 }

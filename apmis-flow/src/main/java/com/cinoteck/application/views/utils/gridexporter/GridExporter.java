@@ -19,6 +19,7 @@
  */
 package com.cinoteck.application.views.utils.gridexporter;
 
+import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -456,4 +457,8 @@ public class GridExporter<T> implements Serializable {
   public void setCustomFooter(Column<T> column, String header) {
     ComponentUtil.setData(column, COLUMN_FOOTER, header);
   }
+  
+  public InputStream getCsvInputStream() {
+	    return new CsvInputStreamFactory<>(this).createInputStream();
+	}
 }

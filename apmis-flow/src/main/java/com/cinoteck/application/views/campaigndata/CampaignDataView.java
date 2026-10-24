@@ -1,8 +1,13 @@
 package com.cinoteck.application.views.campaigndata;
 
+
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.LoggerFactory;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
@@ -18,6 +23,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -26,6 +32,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import javax.validation.constraints.NotNull;
 
@@ -99,12 +107,14 @@ import de.symeda.sormas.api.campaign.data.CampaignFormDataCriteria;
 import de.symeda.sormas.api.campaign.data.CampaignFormDataDto;
 import de.symeda.sormas.api.campaign.data.CampaignFormDataEntry;
 import de.symeda.sormas.api.campaign.data.CampaignFormDataIndexDto;
+import de.symeda.sormas.api.campaign.data.CampaignFormImageValue;
 import de.symeda.sormas.api.campaign.form.CampaignFormElement;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaDto;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaExpiryDto;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaGeographyLevel;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaHistoryExtractDto;
 import de.symeda.sormas.api.campaign.form.CampaignFormMetaReferenceDto;
+import de.symeda.sormas.api.document.DocumentDto;
 import de.symeda.sormas.api.i18n.Captions;
 import de.symeda.sormas.api.i18n.Descriptions;
 import de.symeda.sormas.api.i18n.I18nProperties;
@@ -120,6 +130,7 @@ import de.symeda.sormas.api.user.UserRole;
 import de.symeda.sormas.api.user.UserType;
 import de.symeda.sormas.api.utils.CSVUtils;
 import de.symeda.sormas.api.utils.SortProperty;
+import org.apache.commons.lang3.StringUtils;
 
 @PageTitle("APMIS-Campaign Data")
 @Route(value = "campaigndata", layout = MainLayout.class)
@@ -291,12 +302,26 @@ public class CampaignDataView extends VerticalLayout
 
 		exportTransposedDataButton.setIcon(new Icon(VaadinIcon.UPLOAD));
 //		exporttransposeDataDictionary.setIcon(new Icon(VaadinIcon.DOWNLOAD));
+		
+		Anchor zipAnchor = new Anchor("", "Export with Images");
+		zipAnchor.getStyle().set("display", "none");
+		zipAnchor.getElement().setAttribute("download", true);
+		
+		
+		Button exportImagesButton = new Button("Export with Images (ZIP)");
+		exportImagesButton.setIcon(new Icon(VaadinIcon.DOWNLOAD));
+		exportImagesButton.addClickListener(e -> {
+		    zipAnchor.setHref(createZipExportResource());
+		    zipAnchor.getElement().callJsFunction("click");
+		});
+		
+		
 
 		exportButton.addClickListener(e -> {
 			anchor.getElement().callJsFunction("click");
 		});
 
-		actionButtonlayout.add(campaignYear, campaignz, campaignPhase, newForm, importFormData, exportButton, anchor);
+		actionButtonlayout.add(campaignYear, campaignz, campaignPhase, newForm, importFormData, exportButton, anchor, exportImagesButton, zipAnchor);
 		anchor.getStyle().set("display", "none");
 
 		HorizontalLayout level1Filters = new HorizontalLayout();
@@ -1523,6 +1548,65 @@ public class CampaignDataView extends VerticalLayout
 
 		add(filterBlock);
 	}
+	
+	
+	private StreamResource createZipExportResource() {
+	    return new StreamResource(exportFileName + ".zip", () -> {
+	        try {
+	            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	            try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+
+	                zos.putNextEntry(new ZipEntry(exportFileName + ".csv"));
+	                zos.write(readCsvBytes());
+	                zos.closeEntry();
+
+	                for (Map.Entry<String, byte[]> img : collectImagesFromGrid().entrySet()) {
+	                    zos.putNextEntry(new ZipEntry("images/" + img.getKey()));
+	                    zos.write(img.getValue());
+	                    zos.closeEntry();
+	                }
+	            }
+	            return new ByteArrayInputStream(baos.toByteArray());
+	        } catch (IOException e) {
+	            logger.error("Failed to generate ZIP export", e);
+	            return new ByteArrayInputStream(new byte[0]);
+	        }
+	    });
+	}
+
+	private byte[] readCsvBytes() throws IOException {
+	    try (InputStream in = exporter.getCsvInputStream()) {
+	        return in.readAllBytes();
+	    }
+	}
+	private Map<String, byte[]> collectImagesFromGrid() {
+	    Map<String, byte[]> images = new LinkedHashMap<>();
+	    List<CampaignFormDataIndexDto> rows =
+	            grid.getDataProvider().fetch(new Query<>()).collect(Collectors.toList());
+
+	    for (CampaignFormDataIndexDto item : rows) {
+	        for (CampaignFormDataEntry entry : item.getFormValues()) {
+	            for (CampaignFormImageValue img : extractImageValues(entry.getValue())) {
+	                if (!img.isUploaded() || StringUtils.isBlank(img.getImageId())) {
+	                    continue;
+	                }
+	                String base = imageDisplayName(img);
+	                String uniqueName = base;
+	                int n = 1;
+	                while (images.containsKey(uniqueName)) {
+	                    uniqueName = base + "_" + (n++);
+	                }
+	                try {
+	                    images.put(uniqueName, FacadeProvider.getCampaignFormImageFacade().readImage(img.getImageId()));
+	                } catch (IOException e) {
+	                    logger.error("Could not read image " + img.getImageId(), e);
+	                }
+	            }
+	        }
+	    }
+	    return images;
+	}
+	
 
 	public void buildLqasTransposedData(CampaignFormDataCriteria criteria) {
 //		FacadeProvider.getCampaignFormDataFacade().getTransposedCampaignFormDataLQAS(criteria);
@@ -2859,69 +2943,80 @@ public class CampaignDataView extends VerticalLayout
 	public void addCustomColumn(String property, String caption, String fieldsType, List<MapperUtil> options) {
 		if (!property.toString().contains("readonly")) {
 			if (fieldsType != null && fieldsType.equalsIgnoreCase("image")) {
-				grid.addColumn(new ComponentRenderer<>(item -> {
-					CampaignFormDataEntry formValue = item.getFormValues().stream()
-							.filter(v -> property.equals(v.getId()))
-							.findFirst()
-							.orElse(null);
+			    Column<CampaignFormDataIndexDto> imageColumn = grid.addColumn(new ComponentRenderer<>(item -> {
+			        CampaignFormDataEntry formValue = item.getFormValues().stream()
+			                .filter(v -> property.equals(v.getId()))
+			                .findFirst()
+			                .orElse(null);
 
-					if (formValue == null || formValue.getValue() == null) {
-						return new Span("No image");
-					}
+			        if (formValue == null || formValue.getValue() == null) {
+			            return new Span("No image");
+			        }
 
-					Object val = formValue.getValue();
-					String previewDataUrl = null;
+			        Object val = formValue.getValue();
+			        String imageId = null;
 
-					if (val instanceof Map) {
-						Map<?, ?> map = (Map<?, ?>) val;
-						Object url = map.get("previewUrl");
-						if (url != null) {
-							previewDataUrl = url.toString();
-						}
-					} else if (val instanceof List) {
-						List<?> list = (List<?>) val;
-						if (!list.isEmpty()) {
-							Object first = list.get(0);
-							if (first instanceof Map) {
-								Map<?, ?> map = (Map<?, ?>) first;
-								Object url = map.get("previewUrl");
-								if (url != null) {
-									previewDataUrl = url.toString();
-								}
-							}
-						}
-					}
+			        // Single image (Map)
+			        if (val instanceof Map) {
+			            Map<?, ?> map = (Map<?, ?>) val;
+			            Object id = map.get("imageId");
+			            if (id != null) {
+			                imageId = id.toString();
+			            }
+			        }
+			        // Multiple images (List) — use the first one for the thumbnail
+			        else if (val instanceof List) {
+			            List<?> list = (List<?>) val;
+			            if (!list.isEmpty()) {
+			                Object first = list.get(0);
+			                if (first instanceof Map) {
+			                    Map<?, ?> map = (Map<?, ?>) first;
+			                    Object id = map.get("imageId");
+			                    if (id != null) {
+			                        imageId = id.toString();
+			                    }
+			                }
+			            }
+			        }
 
-					if (previewDataUrl == null || previewDataUrl.isEmpty()) {
-						return new Span("No preview");
-					}
+			        if (imageId == null || imageId.isEmpty()) {
+			            return new Span("No image");
+			        }
 
-					Image thumbnail = new Image(previewDataUrl, "Thumbnail");
-					thumbnail.setWidth("40px");
-					thumbnail.setHeight("40px");
-					thumbnail.getStyle().set("object-fit", "cover");
-					thumbnail.getStyle().set("cursor", "pointer");
-					return thumbnail;
-				}))
-				.setHeader(caption)
-				.setSortable(false)
-				.setResizable(true)
-				.setAutoWidth(true)
-				.setTooltipGenerator(e -> "Image: " + caption);
-				return;
+			        StreamResource resource = buildImageResource(imageId);
+			        if (resource == null) {
+			            return new Span("No image");
+			        }
+
+			        Image thumbnail = new Image(resource, "Thumbnail");   // ✅ uses the StreamResource
+			        thumbnail.setWidth("40px");
+			        thumbnail.setHeight("40px");
+			        thumbnail.getStyle().set("object-fit", "cover");
+			        thumbnail.getStyle().set("cursor", "pointer");
+			        return thumbnail;
+			    }))
+			    .setHeader(caption)
+			    .setSortable(false)
+			    .setResizable(true)
+			    .setAutoWidth(true)
+			    .setTooltipGenerator(e -> "Image: " + caption);
+
+			    if (exporter != null) {
+			        exporter.setExportValue(imageColumn, item -> exportImageNames(item, property));
+			    }
+
+			    return;
 			}
 			
 			
-			grid.addColumn(e -> {
+			Grid.Column<CampaignFormDataIndexDto> column = grid.addColumn(e -> {
 				CampaignFormDataEntry formValue = e.getFormValues().stream().filter(v -> v.getId().equals(property))
 						.findFirst().orElse(null);
 				if (property.equalsIgnoreCase("villagecode")) {					
 					return formValue.getValue().toString();
 				} else if (fieldsType != null && (fieldsType.equalsIgnoreCase("number"))) {
 					if (formValue != null) {
-						return removeTrailingDecimalFromString(formValue.getValue().toString());// (e.getFormValues().stream().filter(v
-																								// ->
-																								// v.getId().equals(property)).findFirst().orElse(null));
+						return removeTrailingDecimalFromString(formValue.getValue().toString());																// v.getId().equals(property)).findFirst().orElse(null));
 					} else {
 						return "";
 					}
@@ -2952,73 +3047,68 @@ public class CampaignDataView extends VerticalLayout
 					}
 					return formValueCaption;
 
-				}else if (fieldsType != null && fieldsType.equalsIgnoreCase("image")) {
-			
-				            if (formValue == null || formValue.getValue() == null) {
-				                return new Span("No image");
-				            }
-				            
-				            Object val = formValue.getValue();
-				            String imageId = null;
-				            //Single Image Map 
-				            if (val instanceof Map) {
-				                Map<?, ?> map = (Map<?, ?>) val;
+				} else if (fieldsType != null && fieldsType.equalsIgnoreCase("image")) {
+
+				    if (formValue == null || formValue.getValue() == null) {
+				        return new Span("No image");
+				    }
+
+				    Object val = formValue.getValue();
+				    String imageId = null;
+
+				    // Single image (Map)
+				    if (val instanceof Map) {
+				        Map<?, ?> map = (Map<?, ?>) val;
+				        Object id = map.get("imageId");
+				        if (id != null) {
+				            imageId = id.toString();
+				        }
+				    }
+				    // Multiple images (List) — use the first for the thumbnail
+				    else if (val instanceof List) {
+				        List<?> list = (List<?>) val;
+				        if (!list.isEmpty()) {
+				            Object first = list.get(0);
+				            if (first instanceof Map) {
+				                Map<?, ?> map = (Map<?, ?>) first;
 				                Object id = map.get("imageId");
 				                if (id != null) {
 				                    imageId = id.toString();
 				                }
-				            } 
-				            //Multiple image
-				            else if (val instanceof List) {
-				                List<?> list = (List<?>) val;
-				                if (!list.isEmpty()) {
-				                    Object first = list.get(0);
-				                    if (first instanceof Map) {
-				                        Map<?, ?> map = (Map<?, ?>) first;
-				                        Object id = map.get("imageId");
-				                        if (id != null) {
-				                            imageId = id.toString();
-				                        }
-				                    }
-				                }
 				            }
-				            
-				            if (imageId == null || imageId.isEmpty()) {
-				                return new Span("No image");
-				            }
-				            
-				            String previewUrl = "/sormas-rest/apmisrestserver/image/" + imageId;
-				            Image thumbnail = new Image(previewUrl, "Image thumbnail");
-				            thumbnail.setWidth("40px");
-				            thumbnail.setHeight("40px");
-				            thumbnail.getStyle().set("object-fit", "cover");
-				            // Optional: add a click listener to open a larger preview
-				            thumbnail.getElement().addEventListener("click", ex -> {
-				                // You could open a dialog with the full image
-				            });
-				            return thumbnail;
-				   
-					
-				}
-//	                else if(fieldsType != null && (fieldsType.equalsIgnoreCase("checkboxbasic"))) {
-//	                	
-//	                	String formValueCaption = "";
-//	                	for(MapperUtil valueCaption : options) {
-//	                		if(formValue != null  && formValue.getValue().toString().equalsIgnoreCase(valueCaption.getKey())) {
-////	    	                	System.out.println(formValue +  "formValueformValue" + formValue.getValue().toString() );
-//		                		formValueCaption = valueCaption.getCaption();	
-//	                		}
-//	                	}
-//            		return formValueCaption;
-//
-//	                }
-				else {
-					return removeTrailingDecimal(e.getFormValues().stream().filter(v -> v.getId().equals(property))
-							.findFirst().orElse(null));
+				        }
+				    }
 
+				    if (imageId == null || imageId.isEmpty()) {
+				        return new Span("No image");
+				    }
+
+				    StreamResource resource = buildImageResource(imageId);
+				    if (resource == null) {
+				        return new Span("No image");
+				    }
+
+				    Image thumbnail = new Image(resource, "Image thumbnail");   // ✅ fixed: use the StreamResource
+				    thumbnail.setWidth("40px");
+				    thumbnail.setHeight("40px");
+				    thumbnail.getStyle().set("object-fit", "cover");
+				    thumbnail.getElement().addEventListener("click", ex -> {
+				        // optional: open a larger preview here
+				    });
+				    return thumbnail;
+
+				} else {
+				    return removeTrailingDecimal(
+				        e.getFormValues().stream().filter(v -> v.getId().equals(property)).findFirst().orElse(null));
 				}
-			}).setHeader(caption).setFooter(property).setSortProperty(property).setSortable(false).setResizable(true)
-					.setAutoWidth(true).setTooltipGenerator(e -> {
+			})
+					.setHeader(caption)
+					.setFooter(property)
+					.setSortProperty(property)
+					.setSortable(false)
+					.setResizable(true)
+					.setAutoWidth(true)
+					.setTooltipGenerator(e -> {
 						CampaignFormDataEntry formValue = e.getFormValues().stream()
 								.filter(v -> v.getId().equals(property)).findFirst().orElse(null);
 						String value;
@@ -3039,9 +3129,86 @@ public class CampaignDataView extends VerticalLayout
 						}
 						return caption + " : " + value;
 					}).setClassNameGenerator(item -> "full-width-column");
+			
+			
+			if (fieldsType != null && fieldsType.equalsIgnoreCase("textbox")) {
+	            column.setAutoWidth(false);
+	            column.setFlexGrow(0);
+			    int width = Math.max(80, caption.length() * 8 + 30);
+			    column.setWidth(width + "px");
+//			    column.getStyle().set("white-space", "nowrap");
+			    } 
 		}
+		
+
 
 	}
+	
+private StreamResource buildImageResource(String imageId) {
+    if (StringUtils.isBlank(imageId)) {
+        return null;
+    }
+
+    StreamResource resource = new StreamResource("image_" + imageId, () -> {
+        try {
+            byte[] bytes = FacadeProvider.getCampaignFormImageFacade().readImage(imageId);
+            if (bytes == null || bytes.length == 0) {
+                return new ByteArrayInputStream(new byte[0]);
+            }
+            return new ByteArrayInputStream(bytes);
+        } catch (IOException e) {
+            return new ByteArrayInputStream(new byte[0]);
+        }
+    });
+
+    try {
+        DocumentDto doc = FacadeProvider.getDocumentFacade().getDocumentByUuid(imageId);
+        if (doc != null && StringUtils.isNotBlank(doc.getMimeType())) {
+            resource.setContentType(doc.getMimeType());
+        } else {
+            resource.setContentType("image/jpeg");
+        }
+    } catch (Exception e) {
+        resource.setContentType("image/jpeg");
+    }
+
+    return resource;
+}
+
+	
+	private String exportImageNames(CampaignFormDataIndexDto item, String property) {
+	    CampaignFormDataEntry formValue = item.getFormValues().stream()
+	            .filter(v -> property.equals(v.getId()))
+	            .findFirst().orElse(null);
+	    if (formValue == null || formValue.getValue() == null) {
+	        return "";
+	    }
+	    return extractImageValues(formValue.getValue()).stream()
+	            .map(this::imageDisplayName)
+	            .filter(StringUtils::isNotBlank)
+	            .collect(Collectors.joining(", "));
+	}
+
+	private String imageDisplayName(CampaignFormImageValue img) {
+	    return StringUtils.firstNonBlank(img.getGeneratedFileName(), img.getOriginalFileName(), img.getImageId());
+	}
+
+	private List<CampaignFormImageValue> extractImageValues(Object val) {
+	    List<CampaignFormImageValue> result = new ArrayList<>();
+	    if (val instanceof Map) {
+	        CampaignFormImageValue v = CampaignFormImageValue.fromMap((Map<?, ?>) val);
+	        if (v != null) result.add(v);
+	    } else if (val instanceof List) {
+	        for (Object o : (List<?>) val) {
+	            if (o instanceof Map) {
+	                CampaignFormImageValue v = CampaignFormImageValue.fromMap((Map<?, ?>) o);
+	                if (v != null) result.add(v);
+	            }
+	        }
+	    }
+	    return result;
+	}
+	
 
 	public void addCustomColumn(String property, String caption, String fieldsType) {
 		if (!property.toString().contains("readonly")) {

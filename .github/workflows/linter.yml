@@ -54,9 +54,14 @@ jobs:
       - name: Lint Code Base
         uses: github/super-linter@v3.15.1
         env:
-          DEFAULT_BRANCH: development
+          # The target branch of the pull request, or the default branch of the repository.
+          # The linter compares with it to find the changed files. Thus, the same file works
+          # in a fork and in upstream.
+          DEFAULT_BRANCH: ${{ github.base_ref || github.event.repository.default_branch }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: false
+          # The build generates the files in openapi/ from the Java code. Do not lint them.
+          FILTER_REGEX_EXCLUDE: openapi/.*
           VALIDATE_BASH: false
           VALIDATE_CSS: false
           VALIDATE_HTML: false

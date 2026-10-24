@@ -436,10 +436,18 @@ public abstract class AbstractAdoDao<ADO extends AbstractDomainObject> {
 
 			return snapshot;
 
-		} catch (SQLException e) {
-			System.out.println(e);
-			throw new DaoException("Sorry, we are unable to add data to this cluster; DUPLICATE entry detected or/and CLUSTER LOT has already been selected.");
-		} catch (InvocationTargetException e) {
+		}
+//		catch (SQLException e) {
+//			System.out.println("sql exception " + e);
+//			System.out.println(" meaage validation error from abstract ado dao" + e.getMessage());
+//
+//			throw new DaoException("Sorry, we are unable to add data to this cluster; DUPLICATE entry detected or/and CLUSTER LOT has already been selected.");
+//		}
+	 catch (SQLException e) {
+		Log.e(getTableName(), "Could not save " + ado, e);
+		throw new DaoException("Sorry, we are unable to add data to this cluster; DUPLICATE entry detected.", e);
+	}
+		catch (InvocationTargetException e) {
 			throw new RuntimeException(e);
 		} catch (IllegalAccessException e) {
 			throw new RuntimeException(e);

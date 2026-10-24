@@ -72,7 +72,17 @@ jobs:
       - name: Check branch naming convention
         env:
           HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          THIS_REPO: ${{ github.repository }}
         run: |
+          # The naming rule does not apply to a pull request from the development branch
+          # of this repository. A fork uses this pull request to bring the upstream changes
+          # into its own main branch.
+          if [[ "$HEAD_REF" == "development" && "$HEAD_REPO" == "$THIS_REPO" ]]; then
+            echo "Branch 'development' of this repository is accepted. The naming rule does not apply."
+            exit 0
+          fi
+
           PATTERN="^(test|ci|fix|docs|chore|feat)/.+"
 
           if [[ "$HEAD_REF" =~ $PATTERN ]]; then

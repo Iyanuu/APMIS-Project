@@ -22,7 +22,9 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
@@ -40,6 +42,7 @@ import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.DataProvider;
@@ -96,6 +99,16 @@ public class FormGridComponent extends VerticalLayout {
 //	ObjectMapper objectMapper = new ObjectMapper();
 	Dialog dialog;
 	Button save = new Button("Save");
+	
+	
+//	MultiSelectComboBox<String> imageAllowedFormats = new MultiSelectComboBox<>("Image Allowed Formats");
+	NumberField imageMaxCount = new NumberField("Image Max Count");
+	Checkbox imageMultiple = new Checkbox("Allow Multiple Images");	
+	NumberField imageMaxUploadSizeMb = new NumberField("Image Max Upload Size (MB)");
+	NumberField imageTargetWidth = new NumberField("Image Target Width");
+	NumberField imageTargetHeight = new NumberField("Image Target Height");
+	NumberField imageJpegQuality = new NumberField("Image JPEG Quality");
+	Checkbox imageCameraOnlyMobile = new Checkbox("Obtain Image From Camera Only (Mobile)");
 
 	public FormGridComponent(CampaignFormMetaDto campaignFormMetaDto) {
 
@@ -116,6 +129,19 @@ public class FormGridComponent extends VerticalLayout {
 		errorMessage.setVisible(false);
 		comment.setVisible(false);
 		defaultValues.setVisible(false);
+		
+		
+//		imageAllowedFormats.setVisible(false);
+		imageMaxCount.setVisible(false);
+		imageMultiple.setVisible(false);
+		imageMaxUploadSizeMb.setVisible(false);
+		imageTargetWidth.setVisible(false);
+		imageTargetHeight.setVisible(false);
+		imageJpegQuality.setVisible(false);
+		imageCameraOnlyMobile.setVisible(false);
+		
+		imageMaxCount.setValue(1.0);
+		imageMaxCount.setEnabled(false);
 
 		caption.setValueChangeMode(ValueChangeMode.EAGER);
 		hint.setValueChangeMode(ValueChangeMode.EAGER);
@@ -159,6 +185,16 @@ public class FormGridComponent extends VerticalLayout {
 		important.setItems(true, false);
 		styles.setHelperText("Examples of all styles: inline, row, first, col-1, col-2, col-3, col-4, "
 				+ "col-5, col-6, col-7, col-8, col-9, col-10, col-11, col-12 add them in a comma seperated format");
+		
+		
+//		imageAllowedFormats.setHelperText("Comma separated, e.g. jpg, jpeg, png, webp");
+//		imageAllowedFormats.setItems("jpg", "jpeg", "png", "webp");
+//		imageAllowedFormats.setHelperText("Select the allowed image formats");
+		imageMaxUploadSizeMb.setHelperText("Must be >= 1");
+		imageTargetWidth.setHelperText("Must be >= 1");
+		imageTargetHeight.setHelperText("Must be >= 1");
+		imageJpegQuality.setHelperText("Allowed range 1-100");
+		
 
 		List<CampaignFormElement> listofelements = campaignFormMetaDto.getCampaignFormElements();
 		List<String> listofthem = new ArrayList<>();
@@ -398,6 +434,31 @@ public class FormGridComponent extends VerticalLayout {
 					constraints.clear();
 					constraints.setVisible(false);
 				}
+				
+
+				if (formBeenEdited.getImageMultiple() != null) {
+				    imageMultiple.setValue(formBeenEdited.getImageMultiple());
+				}
+				
+				if (formBeenEdited.getImageMaxCount() != null) {
+				    imageMaxCount.setValue(formBeenEdited.getImageMaxCount().doubleValue());
+				}
+
+				if (formBeenEdited.getImageMaxUploadSizeMb() != null) {
+				    imageMaxUploadSizeMb.setValue(formBeenEdited.getImageMaxUploadSizeMb().doubleValue());
+				}
+				if (formBeenEdited.getImageTargetWidth() != null) {
+				    imageTargetWidth.setValue(formBeenEdited.getImageTargetWidth().doubleValue());
+				}
+				if (formBeenEdited.getImageTargetHeight() != null) {
+				    imageTargetHeight.setValue(formBeenEdited.getImageTargetHeight().doubleValue());
+				}
+				if (formBeenEdited.getImageJpegQuality() != null) {
+				    imageJpegQuality.setValue(formBeenEdited.getImageJpegQuality().doubleValue());
+				}
+				if (formBeenEdited.getImageCameraOnlyMobile() != null) {
+				    imageCameraOnlyMobile.setValue(formBeenEdited.getImageCameraOnlyMobile());
+				}
 
 				save.setText("Update");
 			}
@@ -636,7 +697,10 @@ public class FormGridComponent extends VerticalLayout {
 
 					newForm.setDefaultvalue(defaultValues.getValue());
 				}
+				
+				applyImageSettings(newForm);
 
+				
 				if (!formId.getValue().toString().isEmpty()) {
 					if (checkForUniqueId(formId.getValue())) {
 						if (campaignFormMetaDto.getCampaignFormElements() == null) {
@@ -822,6 +886,9 @@ public class FormGridComponent extends VerticalLayout {
 					if (!defaultValues.getValue().isEmpty()) {
 						newForm.setDefaultvalue(defaultValues.getValue());
 					}
+					
+					applyImageSettings(newForm);
+
 
 					if (!formId.getValue().toString().isEmpty()) {
 						if (formBeenEdited.getId().equals(formId.getValue())) {
@@ -904,11 +971,18 @@ public class FormGridComponent extends VerticalLayout {
 					notification.open();
 				}
 			}
+			
 		});
 
-		formLayout.add(formType, caption, formId, important, options, expression, dependingOn, dependingOnValues,
-				styles, constraints, min, max, defaultValues, errorMessage, comment, expressions, hint);
+//		formLayout.add(formType, caption, formId, important, options, expression, dependingOn, dependingOnValues,
+//				styles, constraints, min, max, defaultValues, errorMessage, comment, expressions, hint);
 
+		
+		formLayout.add(formType, caption, formId, important, options, expression, dependingOn, dependingOnValues,
+		        styles, constraints, min, max, defaultValues, errorMessage, comment, expressions, hint,
+		        imageMaxCount, imageMultiple, imageMaxUploadSizeMb, imageTargetWidth,
+		        imageTargetHeight, imageJpegQuality, imageCameraOnlyMobile);
+		
 		formLayout.setColspan(formType, 2);
 		formLayout.setColspan(formId, 2);
 		formLayout.setColspan(caption, 2);
@@ -925,8 +999,52 @@ public class FormGridComponent extends VerticalLayout {
 		formLayout.setColspan(errorMessage, 2);
 		formLayout.setColspan(comment, 2);
 		formLayout.setColspan(hint, 2);
+		
+		
+//		formLayout.setColspan(imageAllowedFormats, 2);
+		formLayout.setColspan(imageMultiple, 2);
+		formLayout.setColspan(imageMaxCount, 2);
+		formLayout.setColspan(imageMaxUploadSizeMb, 2);
+		formLayout.setColspan(imageTargetWidth, 2);
+		formLayout.setColspan(imageTargetHeight, 2);
+		formLayout.setColspan(imageJpegQuality, 2);
+		formLayout.setColspan(imageCameraOnlyMobile, 2);
+
 
 		return vrsub;
+	}
+	
+	private void applyImageSettings(CampaignFormElement form) {
+		  form.setImageAllowedFormats(new String[] {"jpg", "jpeg", "png", "webp"}); 
+		
+		
+	    if (imageMaxCount.getValue() != null) {
+	        form.setImageMaxCount(imageMaxCount.getValue().intValue());
+	    }
+	    if (imageMultiple.getValue() != null) {
+	        form.setImageMultiple(imageMultiple.getValue());
+	    }
+	    if (imageMaxUploadSizeMb.getValue() != null) {
+	        form.setImageMaxUploadSizeMb(imageMaxUploadSizeMb.getValue().intValue());
+	    }else {
+	        form.setImageMaxUploadSizeMb(1);
+	    }
+	    if (imageTargetWidth.getValue() != null) {
+	        form.setImageTargetWidth(imageTargetWidth.getValue().intValue());
+	    }else {
+	        form.setImageTargetWidth(768);
+
+	    }
+	    if (imageTargetHeight.getValue() != null) {
+	        form.setImageTargetHeight(imageTargetHeight.getValue().intValue());
+	    }else {
+	        form.setImageTargetHeight(1024);
+
+	    }
+	        form.setImageJpegQuality(75);
+	    
+	        form.setImageCameraOnlyMobile(true);
+	    
 	}
 
 	private CampaignFormElementType generateType(String type) {
@@ -972,6 +1090,10 @@ public class FormGridComponent extends VerticalLayout {
 			return CampaignFormElementType.LINEBREAK;
 		} else if (type.equalsIgnoreCase("TIME")) {
 			return CampaignFormElementType.TIME;
+		} else if (type.equalsIgnoreCase("IMAGE")) {
+			return CampaignFormElementType.IMAGE;
+		} else if (type.equalsIgnoreCase("VALIDATEDTEXT")) {
+			return CampaignFormElementType.VALIDATEDTEXT;
 		}			
 		return CampaignFormElementType.LABEL;
 	}
@@ -1088,6 +1210,17 @@ public class FormGridComponent extends VerticalLayout {
 		comment.setValue("");
 		defaultValues.setValue("");
 		hint.setValue("");
+		
+		
+//		imageAllowedFormats.clear();
+		imageMaxCount.setValue(1.0);
+		imageMaxCount.setEnabled(false);
+		imageMultiple.setValue(false);
+		imageMaxUploadSizeMb.clear();
+		imageTargetWidth.clear();
+		imageTargetHeight.clear();
+		imageJpegQuality.clear();
+		imageCameraOnlyMobile.setValue(false);
 	}
 
 	public void valueChange() {
@@ -1136,7 +1269,38 @@ public class FormGridComponent extends VerticalLayout {
 				errorMessage.setVisible(false);
 				comment.setVisible(false);
 				defaultValues.setVisible(false);
-			} else {
+			} else if (e.getValue().toString().toLowerCase().equals("image")) {
+
+			    formId.setVisible(true);
+			    caption.setVisible(true);
+			    hint.setVisible(true);
+			    important.setVisible(true);
+			    errorMessage.setVisible(true);
+			    comment.setVisible(true);
+//			    imageAllowedFormats.setVisible(true);
+			    imageMaxCount.setVisible(true);
+			    imageMultiple.setVisible(true);
+			    imageMaxUploadSizeMb.setVisible(true);
+			    imageTargetWidth.setVisible(true);
+			    imageTargetHeight.setVisible(true);
+			    imageJpegQuality.setVisible(true);
+			    imageCameraOnlyMobile.setVisible(true);
+
+			    options.setVisible(false);
+			    expression.setVisible(false);
+			    expressions.setVisible(false);
+			    dependingOn.setVisible(false);
+			    dependingOnValues.setVisible(false);
+			    min.setVisible(false);
+			    max.setVisible(false);
+			    styles.setVisible(false);
+			    constraints.setVisible(false);
+//			    errorMessage.setVisible(false);
+//			    comment.setVisible(false);
+			    defaultValues.setVisible(false);
+			}
+			
+			else {
 
 				formId.setVisible(false);
 				important.setVisible(false);
@@ -1170,6 +1334,15 @@ public class FormGridComponent extends VerticalLayout {
 			expressionPopUp(expression.getValue());
 		});
 
+		
+		imageMultiple.addValueChangeListener(e -> {
+		    boolean multiple = Boolean.TRUE.equals(e.getValue());
+		    imageMaxCount.setEnabled(multiple);
+		    if (!multiple) {
+		        imageMaxCount.setValue(1.0);
+		    }
+		});
+		
 	}
 
 	public void expressionPopUp(String expressions) {

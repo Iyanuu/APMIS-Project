@@ -423,5 +423,6 @@
 
     <dimen name="dashboardPreloaderWidth">50dp</dimen>
     <dimen name="dashboardPreloaderHeight">50dp</dimen>
+    <dimen name="textAreaMaxHeight">240dp</dimen>
 
 </resources>
