@@ -1,0 +1,127 @@
+---
+# End-to-end tests of the Android app on an emulator (#81).
+#
+# This is not a required check. It runs by hand, and on pull requests that change the
+# end-to-end tests or this file. A nightly run against staging follows in a later change.
+#
+# Only the tests in the package de.symeda.sormas.app.e2e run. The other instrumented tests
+# under sormas-app/app/src/androidTest test screens that APMIS does not use, but they must
+# still compile, because Gradle builds the folder as one unit.
+
+name: App E2E
+
+env:
+  JAVA: 17
+  # Android 8, the oldest version that the app supports (minSdkVersion 26).
+  API_LEVEL: 26
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main, development]
+    paths:
+      - '.github/workflows/app_e2e.yml'
+      - 'sormas-app/app/src/androidTest/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: app end-to-end tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up JDK ${{ env.JAVA }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA }}
+          distribution: 'zulu'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-java-${{ env.JAVA }}-m2-${{ hashFiles('**/pom.xml', '**/*.pom') }}
+          restore-keys: ${{ runner.os }}-java-${{ env.JAVA }}-m2
+
+      - name: Install sormas-api into the local Maven repository
+        # The Android build resolves de.symeda.sormas:sormas-api from mavenLocal().
+        working-directory: ./sormas-base
+        run: mvn install -pl :sormas-api -am -DskipTests=true -B -ntp
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('sormas-app/**/*.gradle', 'sormas-app/**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Enable KVM
+        # Hardware acceleration for the emulator. Without it, the emulator is too slow to use.
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm
+
+      - name: Cache the emulator image
+        id: avd-cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ env.API_LEVEL }}-google_apis-x86_64
+
+      - name: Make the emulator image and a snapshot for the cache
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.API_LEVEL }}
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "The emulator snapshot is ready for the cache."
+
+      - name: Run the end-to-end tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.API_LEVEL }}
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-boot-timeout: 900
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          working-directory: ./sormas-app
+          script: |
+            chmod +x ./gradlew
+            adb logcat -c
+            ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.package=de.symeda.sormas.app.e2e --no-daemon --stacktrace || (adb logcat -d > ../logcat.txt; exit 1)
+            adb logcat -d > ../logcat.txt
+
+      - name: Upload the test report and logcat
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-e2e-report
+          path: |
+            sormas-app/app/build/reports/androidTests/
+            sormas-app/app/build/outputs/androidTest-results/
+            logcat.txt
+          if-no-files-found: ignore
+          retention-days: 14
