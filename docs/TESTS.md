@@ -43,7 +43,7 @@ The table gives more detail about each check.
 | `android gate` | Gives one result for the Android checks. It passes when the Android build passes or does not run. It fails when the build fails or is cancelled. | yes |
 | `detect android changes` | Finds out if the pull request changes the app. If not, the Android build does not run. | no |
 | `android build and unit tests` | Builds the debug app and runs the app unit tests. | no, but `android gate` reports its result |
-| `app end-to-end tests` | Starts the app on an Android 8 emulator and runs the end-to-end tests. It runs only when a pull request changes these tests or their workflow. | no |
+| `app end-to-end tests` | Starts the app on an Android 8 emulator and runs all the device tests: the end-to-end tests and the old tests of the app database. It runs only when a pull request changes these tests or their workflow. | no |
 | `validate PR title` | The title must start with a type, for example `fix:` or `test(app):`. | no |
 | `validate branch name` | The branch name must start with `test/`, `ci/`, `fix/`, `docs/`, `chore/` or `feat/`. | no |
 | `mobsfscan` | A security scan of the app code. It gives advice only. | no |
@@ -122,9 +122,11 @@ The push sends a different value for "decimal"
 
 The cause is a change in `CampaignFormDataDtoHelper.fillInnerFromAdo`, or in the Gson configuration in `RetroProvider.initGson()`.
 
-### End-to-end tests (`de.symeda.sormas.app.e2e`)
+### Device tests (`sormas-app/app/src/androidTest`)
 
 Open the HTML report in the artifact `app-e2e-report`. If a test failed, search `logcat.txt` for `FATAL EXCEPTION` or for the name of the test.
+
+The old tests, for example `ConfigProviderTest` and `PersonDaoTest`, use `TestHelper`. It makes a test database (`test_sormas.db`) on the device and sets a fake server URL. Thus, these tests need no server. A failure gives the test and the assert that failed.
 
 This message means that the tests were given the production server:
 
@@ -156,10 +158,14 @@ cd ../sormas-app
 ./gradlew :app:testDebugUnitTest --tests '*CampaignFormDataRoundTripTest'
 ```
 
-The end-to-end tests need an emulator or a device with Android 8 or later:
+The device tests need an emulator or a device with Android 8 or later:
 
 ```bash
 cd sormas-app
+./gradlew :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.package=de.symeda.sormas.app
+
+# Only the end-to-end tests:
 ./gradlew :app:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.package=de.symeda.sormas.app.e2e
 ```
@@ -172,5 +178,6 @@ cd sormas-app
 | `sormas-app/app/src/test/java/.../backend/common` | The sync mapping harness and its own tests. |
 | `sormas-app/app/src/test/java/.../backend/campaign` | The campaign tests: sync mapping, save and reload, push payload. |
 | `sormas-app/app/src/androidTest/java/.../e2e` | The end-to-end tests that run on an emulator. |
+| `sormas-app/app/src/androidTest/java/...` | The old SORMAS tests of the app database and settings, and their helpers `TestHelper` and `TestEntityCreator`. They run on the emulator in the same job. |
 
-The other files in `sormas-app/app/src/androidTest` are old SORMAS tests for screens that APMIS does not use. They must compile, but they do not run.
+For new tests on the device database, use `TestHelper` and `TestEntityCreator`. Do not write new helpers that do the same job.
