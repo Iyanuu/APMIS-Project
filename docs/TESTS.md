@@ -4,7 +4,37 @@ This page is for developers who open a pull request. It tells you what each chec
 
 ## The checks on a pull request
 
-Each pull request runs these checks. A **required** check must pass before the pull request can merge.
+Each push to a pull request starts the checks again. The diagram shows when each check runs. A check with a **thick border** is required: it must pass before the pull request can merge. A check with a **dashed border** does not block a merge.
+
+```mermaid
+flowchart TD
+    PR(["You open a pull request,<br/>or you push to it"])
+
+    PR --> MVN["<b>mvn verify</b><br/>builds the server<br/>and runs its tests"]
+    PR --> LINT["<b>Lint Code Base</b><br/>checks the style of<br/>the changed files"]
+    PR --> NAMES["<b>validate PR title</b><br/><b>validate branch name</b>"]
+    PR --> DETECT{"<b>detect android changes</b><br/>Does the pull request change<br/>sormas-app/, sormas-api/,<br/>sormas-rest/, sormas-base/pom.xml<br/>or the Android workflow?"}
+    PR --> E2EQ{"Does the pull request change<br/>the end-to-end tests<br/>or their workflow?"}
+
+    DETECT -->|yes| BUILD["<b>android build and unit tests</b><br/>builds the app, runs the<br/>unit tests and mobsfscan"]
+    DETECT -->|no| SKIP["The Android build<br/>does not run"]
+    BUILD --> GATE["<b>android gate</b><br/>fails if the Android build<br/>failed or was cancelled"]
+    SKIP --> GATE
+
+    E2EQ -->|yes| E2E["<b>app end-to-end tests</b><br/>runs the app on an<br/>Android 8 emulator"]
+    E2EQ -->|no| NOE2E["The end-to-end tests<br/>do not run"]
+
+    MVN --> MERGE{{"The pull request can merge<br/>when the 3 required checks pass<br/>and 1 reviewer approves"}}
+    LINT --> MERGE
+    GATE --> MERGE
+
+    classDef required stroke-width:4px
+    classDef advisory stroke-dasharray:6 4
+    class MVN,LINT,GATE required
+    class NAMES,BUILD,E2E advisory
+```
+
+The table gives more detail about each check.
 
 | Check | What it does | Required |
 |---|---|---|
@@ -17,8 +47,6 @@ Each pull request runs these checks. A **required** check must pass before the p
 | `validate PR title` | The title must start with a type, for example `fix:` or `test(app):`. | no |
 | `validate branch name` | The branch name must start with `test/`, `ci/`, `fix/`, `docs/`, `chore/` or `feat/`. | no |
 | `mobsfscan` | A security scan of the app code. It gives advice only. | no |
-
-The Android build runs when the pull request changes one of these paths: `sormas-app/`, `sormas-api/`, `sormas-rest/`, `sormas-base/pom.xml` or the Android workflow.
 
 ## How to find the result of a check
 
