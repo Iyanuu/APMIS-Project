@@ -54,6 +54,8 @@ jobs:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: false
+          # The build generates the files in openapi/ from the Java code. Do not lint them.
+          FILTER_REGEX_EXCLUDE: openapi/.*
           VALIDATE_BASH: false
           VALIDATE_CSS: false
           VALIDATE_HTML: false
