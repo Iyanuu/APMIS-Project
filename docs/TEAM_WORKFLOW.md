@@ -4,8 +4,6 @@ For engineers joining the testing and developer workflow team. It assumes you kn
 
 If you want the reasoning behind any of this, the readme explains why. This page is just what to type.
 
-> **Note:** this describes the arrangement we are moving to. `main` does not exist yet and `development` still carries our work. Until those are set up, ask before starting — some steps will not apply.
-
 ## The short version
 
 There are two projects and three kinds of branch.
@@ -63,6 +61,32 @@ git push origin development
 ```
 
 `--ff-only` means "only move forward, never create a merge". Because nobody ever edits `development`, this always works. **If it ever refuses, stop and ask** — it means something was committed to the copy by mistake, and that needs sorting out rather than forcing.
+
+### If `development` moved forward, bring the changes into `main`
+
+`main` does not get the APMIS changes by itself. If `git merge --ff-only` added new commits, `main` gets them in a separate pull request: the catch-up pull request.
+
+First, look for a catch-up pull request that is open:
+
+```bash
+gh pr list --base main --head development
+```
+
+- If one is open, do nothing. GitHub adds the new commits to it.
+- If none is open, open one:
+
+```bash
+gh pr create --base main --head development \
+             --title "chore: bring upstream changes into main" \
+             --body "Upstream changes from AFG-Polio-Data development. Review them as one group."
+```
+
+When you merge the catch-up pull request:
+
+- Use **Create a merge commit**. Do not use squash or rebase. After a squash or a rebase, the upstream commits are not on `main`, and the next pull request shows them again.
+- Merge it before the pull requests that start from the new `development`. Until then, those pull requests also show the upstream commits, and the reviewer cannot easily find your change.
+
+Why a separate pull request: if the upstream changes come into `main` inside your pull request, the reviewer sees changes that you did not make. On 24 Oct this occurred in #84 and #86. Each test pull request showed 39 changed files, and only one of them was the test.
 
 ---
 

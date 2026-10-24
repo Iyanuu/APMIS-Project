@@ -68,7 +68,16 @@ jobs:
       - name: Check branch naming convention
         env:
           HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          THIS_REPO: ${{ github.repository }}
         run: |
+          # The catch-up pull request brings the upstream changes from our development into main.
+          # See "If development moved forward" in docs/TEAM_WORKFLOW.md.
+          if [[ "$HEAD_REF" == "development" && "$HEAD_REPO" == "$THIS_REPO" ]]; then
+            echo "Branch 'development' is the catch-up pull request. The naming rule does not apply."
+            exit 0
+          fi
+
           PATTERN="^(test|ci|fix|docs|chore|feat)/.+"
 
           if [[ "$HEAD_REF" =~ $PATTERN ]]; then
