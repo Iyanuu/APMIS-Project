@@ -34,3 +34,4 @@ public class CollectionValueProvider<T extends Collection> implements ValueProvi
         return "";
     }
 }
+// Gate check for #7. This pull request is a draft and will be closed without a merge.
