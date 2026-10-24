@@ -168,7 +168,7 @@ cd sormas-app
 
 | Folder | Tests |
 |---|---|
-| `sormas-api/src/test/java` | Server unit tests, for example `VersionHelperTest`. `mvn verify` runs them. |
+| `sormas-api/src/test/java` | Unit tests of the code that the server and the apps share: `VersionHelperTest`, and the campaign tests `ExpressionProcessorUtilsTest`, `CampaignFormDataEntryTest` and `CampaignFormElementTypeTest`. `mvn verify` runs them. Tests with `@Ignore("#...")` show an open bug. |
 | `sormas-app/app/src/test/java/.../backend/common` | The sync mapping harness and its own tests. |
 | `sormas-app/app/src/test/java/.../backend/campaign` | The campaign tests: sync mapping, save and reload, push payload. |
 | `sormas-app/app/src/androidTest/java/.../e2e` | The end-to-end tests that run on an emulator. |
