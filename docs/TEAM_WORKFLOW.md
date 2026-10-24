@@ -4,8 +4,6 @@ For engineers joining the testing and developer workflow team. It assumes you kn
 
 If you want the reasoning behind any of this, the readme explains why. This page is just what to type.
 
-> **Note:** this describes the arrangement we are moving to. `main` does not exist yet and `development` still carries our work. Until those are set up, ask before starting — some steps will not apply.
-
 ## The short version
 
 There are two projects and three kinds of branch.
