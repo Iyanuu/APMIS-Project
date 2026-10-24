@@ -1,5 +1,8 @@
 package de.symeda.sormas.app.e2e;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
 import android.os.Bundle;
 
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -25,6 +28,15 @@ public final class E2eServer {
 	/** The name of the instrumentation argument that gives the server URL. */
 	public static final String SERVER_URL_ARGUMENT = "serverUrl";
 
+	/** The name of the instrumentation argument that gives the user name of the test user. */
+	public static final String USERNAME_ARGUMENT = "username";
+
+	/**
+	 * The name of the instrumentation argument that gives the password of the test user, encoded in base64. The device
+	 * shell can change special characters in an argument, but not the characters of base64.
+	 */
+	public static final String PASSWORD_BASE64_ARGUMENT = "passwordBase64";
+
 	/** An address on the emulator that has no server. Port 9 is the discard port. */
 	public static final String NO_SERVER = "http://127.0.0.1:9/sormas-rest/";
 
@@ -41,7 +53,32 @@ public final class E2eServer {
 	}
 
 	/**
-	 * Points the app at the test server. Fails before any screen opens if the URL is the production default.
+	 * True when the run has a server and a test user. The journey tests need a real server, so they are skipped without
+	 * these arguments.
+	 */
+	public static boolean hasServerLogin() {
+		return !NO_SERVER.equals(url()) && !username().isEmpty() && !password().isEmpty();
+	}
+
+	/** The user name of the test user, or an empty string. */
+	public static String username() {
+		return argument(USERNAME_ARGUMENT);
+	}
+
+	/** The password of the test user, or an empty string. Never write it to the output. */
+	public static String password() {
+		String encoded = argument(PASSWORD_BASE64_ARGUMENT);
+		return encoded.isEmpty() ? "" : new String(Base64.getDecoder().decode(encoded), StandardCharsets.UTF_8);
+	}
+
+	private static String argument(String name) {
+		String value = InstrumentationRegistry.getArguments().getString(name);
+		return value == null ? "" : value.trim();
+	}
+
+	/**
+	 * Points the app at the test server and logs out, so that each test starts on the login screen. Fails before any
+	 * screen opens if the URL is the production default.
 	 */
 	public static void useTestServer() {
 		String url = url();
@@ -55,6 +92,9 @@ public final class E2eServer {
 		if (isProduction(used)) {
 			throw new IllegalStateException("The app still uses the production server after the change: " + used);
 		}
+
+		// The tests run in one app process. A test that logged in must not change the start of the next test.
+		ConfigProvider.clearUserLogin();
 	}
 
 	static boolean isProduction(String url) {
