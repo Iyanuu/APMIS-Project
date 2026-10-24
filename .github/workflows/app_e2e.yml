@@ -159,6 +159,12 @@ jobs:
         run: |
           set -euo pipefail
           code=$(curl -sS -o version.txt -w '%{http_code}' -u "$TEST_USER:$APP_PASS" "${STAGING_REST_URL}info/version")
+          if [ "$code" = "403" ]; then
+            # sormas-rest has no login challenge: a wrong password continues as an anonymous user, and the
+            # role check then answers 403. Thus, 403 has two possible causes.
+            echo "::error::Staging answered HTTP 403 for info/version. The password is wrong, or the test user has no mobile role. The REST API accepts only REST_USER and these roles: COMMUNITY_OFFICER, HOSPITAL_INFORMANT, COMMUNITY_INFORMANT, CASE_OFFICER, CONTACT_OFFICER, POE_INFORMANT, SURVEILLANCE_OFFICER (sormas-rest glassfish-web.xml)."
+            exit 1
+          fi
           if [ "$code" != "200" ]; then
             echo "::error::Staging answered HTTP $code for info/version. Check the URL, the test user and the password."
             exit 1
