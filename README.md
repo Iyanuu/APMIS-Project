@@ -31,18 +31,21 @@ flowchart LR
     M["main<br/>our workspace"]
 
     U -->|"1 · we pull their updates down"| D
-    D -->|"2 · start your branch here"| F
-    F -->|"3 · pull request, reviewed and checked"| M
-    F -->|"4 · the same branch, offered to APMIS"| U
+    D -->|"2 · catch-up pull request"| M
+    D -->|"3 · start your branch here"| F
+    F -->|"4 · pull request, reviewed and checked"| M
+    F -->|"5 · the same branch, offered to APMIS"| U
 ```
 
 **1. We keep our copy current.** `development` is updated from the APMIS project regularly. Because nobody edits it, this never causes a conflict — it simply catches up.
 
-**2. You start your branch from `development`.** Not from `main`. This matters, and the next section explains why.
+**2. We bring their changes into `main`.** When an update adds commits to `development`, one pull request from `development` into `main` brings them in. We review the APMIS changes as one group, and we merge with a merge commit. Thus, each feature pull request shows only its own change. The [step by step guide](docs/TEAM_WORKFLOW.md#if-development-moved-forward-bring-the-changes-into-main) gives the commands.
 
-**3. You open a pull request into `main`.** That is where it gets reviewed and where the checks run. Once approved and merged, the work is part of what we have built.
+**3. You start your branch from `development`.** Not from `main`. This matters, and the next section explains why.
 
-**4. The same branch is then offered to the APMIS team**, as a second pull request into their `development`. Same branch, different destination. No new branch, no copying commits across.
+**4. You open a pull request into `main`.** That is where it gets reviewed and where the checks run. Once approved and merged, the work is part of what we have built.
+
+**5. The same branch is then offered to the APMIS team**, as a second pull request into their `development`. Same branch, different destination. No new branch, no copying commits across.
 
 ### Why start from `development` rather than `main`
 

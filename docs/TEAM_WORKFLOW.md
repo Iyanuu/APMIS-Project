@@ -64,6 +64,32 @@ git push origin development
 
 `--ff-only` means "only move forward, never create a merge". Because nobody ever edits `development`, this always works. **If it ever refuses, stop and ask** — it means something was committed to the copy by mistake, and that needs sorting out rather than forcing.
 
+### If `development` moved forward, bring the changes into `main`
+
+`main` does not get the APMIS changes by itself. If `git merge --ff-only` added new commits, `main` gets them in a separate pull request: the catch-up pull request.
+
+First, look for a catch-up pull request that is open:
+
+```bash
+gh pr list --base main --head development
+```
+
+- If one is open, do nothing. GitHub adds the new commits to it.
+- If none is open, open one:
+
+```bash
+gh pr create --base main --head development \
+             --title "chore: bring upstream changes into main" \
+             --body "Upstream changes from AFG-Polio-Data development. Review them as one group."
+```
+
+When you merge the catch-up pull request:
+
+- Use **Create a merge commit**. Do not use squash or rebase. After a squash or a rebase, the upstream commits are not on `main`, and the next pull request shows them again.
+- Merge it before the pull requests that start from the new `development`. Until then, those pull requests also show the upstream commits, and the reviewer cannot easily find your change.
+
+Why a separate pull request: if the upstream changes come into `main` inside your pull request, the reviewer sees changes that you did not make. On 24 Oct this occurred in #84 and #86. Each test pull request showed 39 changed files, and only one of them was the test.
+
 ---
 
 ## 3. Start your branch
