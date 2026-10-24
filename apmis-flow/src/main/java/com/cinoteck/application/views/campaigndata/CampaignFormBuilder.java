@@ -654,58 +654,6 @@ public class CampaignFormBuilder extends VerticalLayout {
 			}
 		});
 
-//		if (geographyLevel == CampaignFormMetaGeographyLevel.DISTRICT) {
-//			cbDistrict.addValueChangeListener(e -> {
-//				if (e.getValue() != null) {
-//					communities = FacadeProvider.getCommunityFacade().getAllActiveClustersDistrictAndSelectedInCampaign(e.getValue().getUuid(), criteria.getCampaign().getUuid(), "English");
-//					cbCommunity.clear();
-//					cbCommunity.setReadOnly(false);
-//					;
-//					communities.sort(Comparator.comparingInt(CommunityReferenceDto::getNumber));
-//
-//					cbCommunity.setItems(communities);
-//					cbCommunity.setValue(communities.get(0));
-//					cbCommunity.setItemLabelGenerator(itm -> {
-//						CommunityReferenceDto dcfv = (CommunityReferenceDto) itm;
-//						return dcfv.getNumber() + " | " + dcfv.getCaption();
-//					});
-// 
-//					Long comdto = FacadeProvider.getPopulationDataFacade().getDistrictPopulationCountByType(
-//							e.getValue().getUuid(), campaignReferenceDto.getUuid(), AgeGroup.AGE_0_4);
-// 
-//					VaadinService.getCurrentRequest().getWrappedSession().setAttribute("populationdata", comdto);
-//				} else {
-//					cbCommunity.clear();
-//					cbCommunity.setReadOnly(true);
-//					;
-//				}
-//			});
-//		} else {
-//			cbDistrict.addValueChangeListener(e -> {
-//				if (e.getValue() != null) {
-//					criteria.district(e.getValue());
-//
-//					communities = FacadeProvider.getCommunityFacade().getAllActiveClustersDistrictAndSelectedInCampaign(e.getValue().getUuid(), criteria.getCampaign().getUuid(), "English");
-//					cbCommunity.clear();
-//					cbCommunity.setReadOnly(false);
-//					;
-//					communities.sort(Comparator.comparingInt(CommunityReferenceDto::getNumber));
-//
-//					cbCommunity.setItems(communities);
-//					cbCommunity.setItemLabelGenerator(itm -> {
-//						CommunityReferenceDto dcfv = (CommunityReferenceDto) itm;
-//						return dcfv.getNumber() + " | " + dcfv.getCaption();
-//					});
-//					Long comdto = FacadeProvider.getPopulationDataFacade().getDistrictPopulationCountByType(
-//							e.getValue().getUuid(), campaignReferenceDto.getUuid(), AgeGroup.AGE_0_4);
-//					VaadinService.getCurrentRequest().getWrappedSession().setAttribute("populationdata", comdto);
-//				} else {
-//					criteria.district(null);
-//					cbCommunity.clear();
-//					cbCommunity.setReadOnly(true);
-//				}
-//			});
-//		}
 		cbCommunity.addValueChangeListener(e -> {
 
 			if (!openData) {
@@ -2384,36 +2332,6 @@ public class CampaignFormBuilder extends VerticalLayout {
 		return orderValue;
 	}
 
-	private static Date parseDateFromString(Object value) throws Exception {
-		if (value instanceof Date) {
-			return (Date) value;
-		} else if (value instanceof LocalDate) {
-			return Date.from(((LocalDate) value).atStartOfDay(ZoneId.systemDefault()).toInstant());
-		} else if (value instanceof String) {
-			String stringValue = ((String) value).trim();
-
-			if (stringValue.isEmpty()) {
-				return null;
-			}
-
-			// Try known formats in order
-			List<String> formats = Arrays.asList("dd-MM-yyyy", "yyyy-MM-dd", "MM/dd/yyyy");
-
-			for (String format : formats) {
-				try {
-					DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
-					LocalDate localDate = LocalDate.parse(stringValue, formatter);
-					return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
-				} catch (DateTimeParseException e) {
-
-				}
-			}
-			throw new IllegalArgumentException("Unrecognized date format: " + stringValue);
-		} else {
-			throw new IllegalArgumentException("Unsupported date value type: " + value.getClass());
-		}
-	}
-
 	public <T extends Component> void setFieldValue(T field, CampaignFormElementType type, Object value,
 			Map<String, String> options, String defaultvalue, Boolean isErrored, Object defaultErrorMsgr) {
 
@@ -2617,7 +2535,7 @@ public class CampaignFormBuilder extends VerticalLayout {
 					// please check your data 1", Notification.TYPE_WARNING_MESSAGE);
 				}
 			};
-			((TextArea) field).setValue(value != null ? value.toString() : null);
+			((TextArea) field).setValue(value != null ? value.toString() : "");
 			break;
 		case DATE:
 			DatePicker datePicker = (DatePicker) field;
@@ -3056,77 +2974,6 @@ public class CampaignFormBuilder extends VerticalLayout {
 		return Integer.parseInt(colStyle.substring(colStyle.indexOf("-") + 1)) / 12f * 100;
 	}
 
-	private Date dateFormatterLongAndMobile(Object value) {
-
-		String dateStr = value + "";
-		DateFormat formatter = new SimpleDateFormat("MMM dd, yyyy HH:mm:ss a");
-		DateFormat formatter_ = new SimpleDateFormat("MMM d, yyyy HH:mm:ss");
-		DateFormat formatter_x = new SimpleDateFormat("MMM d, yyyy HH:mm:ss a");
-		DateFormat formattercx = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy");
-		DateFormat formatterx = new SimpleDateFormat("dd/MM/yyyy");
-		DateFormat formatterxn = new SimpleDateFormat("yyyy-MM-dd");
-		Date date;
-		logger.debug("date in question " + value);
-		// +++++++++++++++++++++++===========
-//date = (Date) formatterxn.parse(dateStr);
-		try {
-			date = (Date) formatterxn.parse(dateStr);
-		} catch (ParseException ne) {
-			logger.debug("date wont parse on " + ne.getMessage());
-			try {
-				date = (Date) formatter.parse(dateStr);
-			} catch (ParseException e) {
-				logger.debug("date wont parse on " + e.getMessage());
-				try {
-					date = (Date) formatter_.parse(dateStr);
-				} catch (ParseException ex) {
-					logger.debug("date wont parse on " + ex.getMessage());
-					try {
-						date = (Date) formatter_x.parse(dateStr);
-					} catch (ParseException edz) {
-						logger.debug("date wont parse on " + edz.getMessage());
-						try {
-							date = (Date) formatterx.parse(dateStr);
-						} catch (ParseException ed) {
-							logger.debug("date wont parse on " + ed.getMessage());
-
-							try {
-								date = (Date) formattercx.parse(dateStr);
-							} catch (ParseException edx) {
-								logger.debug("date wont parse on " + edx.getMessage());
-
-								date = new Date((Long) value);
-
-							}
-						}
-					}
-				}
-			}
-		}
-		return date;
-	}
-
-	private Date dateFormatter(Object value) throws ParseException {
-		// TODO Auto-generated method stub
-
-		String dateStr = value + "";
-		DateFormat formatter = new SimpleDateFormat("E MMM dd HH:mm:ss Z yyyy");
-		Date date;
-
-		date = (Date) formatter.parse(dateStr);
-
-		// logger.debug(date);
-
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(date);
-		String formatedDate = cal.get(Calendar.DATE) + "/" + (cal.get(Calendar.MONTH) + 1) + "/"
-				+ cal.get(Calendar.YEAR);
-		// logger.debug("formatedDate : " + formatedDate);
-
-		Date res = new Date(formatedDate + "");
-
-		return res;
-	}
 
 	private void setVisibilityDependency(Component component, String dependingOnId, Object[] dependingOnValues,
 			CampaignFormElementType typex, boolean isRequiredField) {
@@ -3386,13 +3233,6 @@ public class CampaignFormBuilder extends VerticalLayout {
 		}).collect(Collectors.toList());
 	}
 
-	private String buildImageUrl(String imageId) {
-		if (StringUtils.isBlank(imageId)) {
-			return null;
-		}
-		// Use the same REST context as in enrichSingleImageMap
-		return "/sormas-rest/apmisrestserver/image/" + imageId;
-	}
 
 	private StreamResource buildImageResource(String imageId) {
 		if (StringUtils.isBlank(imageId)) {
@@ -4161,96 +4001,96 @@ public class CampaignFormBuilder extends VerticalLayout {
 		}
 	}
 
-//	private boolean validateImageQualityBeforeSave() {
-//		boolean allImagesValid = true;
-//		List<String> validationMessages = new ArrayList<>();
-//
-//		for (CampaignFormElement element : formElements) {
-//			if (!CampaignFormElementType.IMAGE.toString().equalsIgnoreCase(element.getType())) {
-//				continue;
-//			}
-//
-//			List<CampaignFormImageValue> imageValue = imageFieldValues.get(element.getId());
-//			if (imageValue == null) {
-//				continue;
-//			}
-//
-//			Component component = fields.get(element.getId());
-//			TextField imageStateField = component instanceof TextField ? (TextField) component : null;
-//			List<String> failedChecks = new ArrayList<>();
-//
-//			try {
-//				byte[] imageBytes = imagePreviewCache.get(element.getId());
-//				if ((imageBytes == null || imageBytes.length == 0) && imageValue.isUploaded()
-//						&& StringUtils.isNotBlank(imageValue.getImageId())) {
-//					imageBytes = FacadeProvider.getCampaignFormImageFacade().readImage(imageValue.getImageId());
-//					if (imageBytes != null && imageBytes.length > 0) {
-//						imagePreviewCache.put(element.getId(), imageBytes);
-//					}
-//				}
-//
-//				if (imageBytes == null || imageBytes.length == 0) {
-//					failedChecks.add("Image content could not be loaded for validation.");
-//				} else {
-//					BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
-//					if (image == null) {
-//						failedChecks.add("The selected file is not a readable image.");
-//					} else {
-//						int width = image.getWidth();
-//						int height = image.getHeight();
-//						int shortEdge = Math.min(width, height);
-//						int longEdge = Math.max(width, height);
-//
-//						if (shortEdge < MIN_IMAGE_HEIGHT || longEdge < MIN_IMAGE_WIDTH) {
-//							failedChecks.add("Resolution validation failed: image is " + width + "x" + height
-//									+ "; minimum required resolution is 640x480.");
-//						}
-//
-//						double brightness = calculateAverageBrightness(image);
-//						if (brightness < MIN_IMAGE_BRIGHTNESS) {
-//							failedChecks.add("Brightness validation failed: image is too dark (brightness "
-//									+ Math.round(brightness) + ").");
-//						} else if (brightness > MAX_IMAGE_BRIGHTNESS) {
-//							failedChecks.add("Brightness validation failed: image is too bright (brightness "
-//									+ Math.round(brightness) + ").");
-//						}
-//
-//						double sharpnessVariance = calculateLaplacianVariance(image);
-//						if (sharpnessVariance < MIN_IMAGE_SHARPNESS_VARIANCE) {
-//							failedChecks.add("Blur validation failed: image is not sufficiently sharp (sharpness "
-//									+ Math.round(sharpnessVariance) + ").");
-//						}
-//					}
-//				}
-//			} catch (Exception exception) {
-//				logger.error("Unable to validate image field {}", element.getId(), exception);
-//				failedChecks.add("Image quality validation could not be completed.");
-//			}
-//
-//			if (!failedChecks.isEmpty()) {
-//				allImagesValid = false;
-//				String fieldCaption = StringUtils.defaultIfBlank(
-//						get18nCaption(element.getId(), element.getCaption()), element.getId());
-//				String fieldMessage = fieldCaption + ": " + String.join(" ", failedChecks);
-//				validationMessages.add(fieldMessage);
-//				if (imageStateField != null) {
-//					imageStateField.setInvalid(true);
-//					imageStateField.setErrorMessage(String.join(" ", failedChecks));
-//				}
-//			} else if (imageStateField != null) {
-//				imageStateField.setInvalid(false);
-//				imageStateField.setErrorMessage(null);
-//			}
-//		}
-//
-//		if (!allImagesValid) {
-//			hasErrorFormValues(14);
-//			Notification.show(String.join("\n", validationMessages), 8000, Position.MIDDLE)
-//					.addThemeVariants(NotificationVariant.LUMO_ERROR);
-//		}
-//
-//		return allImagesValid;
-//	}
+	private boolean validateImageQualityBeforeSave() {
+		boolean allImagesValid = true;
+		List<String> validationMessages = new ArrayList<>();
+
+		for (CampaignFormElement element : formElements) {
+			if (!CampaignFormElementType.IMAGE.toString().equalsIgnoreCase(element.getType())) {
+				continue;
+			}
+
+			List<CampaignFormImageValue> imageValue = imageFieldValues.get(element.getId());
+			if (imageValue == null) {
+				continue;
+			}
+
+			Component component = fields.get(element.getId());
+			TextField imageStateField = component instanceof TextField ? (TextField) component : null;
+			List<String> failedChecks = new ArrayList<>();
+
+			try {
+				byte[] imageBytes = imagePreviewCache.get(element.getId());
+				if ((imageBytes == null || imageBytes.length == 0) && ((CampaignFormImageValue) imageValue).isUploaded()
+						&& StringUtils.isNotBlank(((CampaignFormImageValue) imageValue).getImageId())) {
+					imageBytes = FacadeProvider.getCampaignFormImageFacade().readImage(((CampaignFormImageValue) imageValue).getImageId());
+					if (imageBytes != null && imageBytes.length > 0) {
+						imagePreviewCache.put(element.getId(), imageBytes);
+					}
+				}
+
+				if (imageBytes == null || imageBytes.length == 0) {
+					failedChecks.add("Image content could not be loaded for validation.");
+				} else {
+					BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
+					if (image == null) {
+						failedChecks.add("The selected file is not a readable image.");
+					} else {
+						int width = image.getWidth();
+						int height = image.getHeight();
+						int shortEdge = Math.min(width, height);
+						int longEdge = Math.max(width, height);
+
+						if (shortEdge < MIN_IMAGE_HEIGHT || longEdge < MIN_IMAGE_WIDTH) {
+							failedChecks.add("Resolution validation failed: image is " + width + "x" + height
+									+ "; minimum required resolution is 640x480.");
+						}
+
+						double brightness = calculateAverageBrightness(image);
+						if (brightness < MIN_IMAGE_BRIGHTNESS) {
+							failedChecks.add("Brightness validation failed: image is too dark (brightness "
+									+ Math.round(brightness) + ").");
+						} else if (brightness > MAX_IMAGE_BRIGHTNESS) {
+							failedChecks.add("Brightness validation failed: image is too bright (brightness "
+									+ Math.round(brightness) + ").");
+						}
+
+						double sharpnessVariance = calculateLaplacianVariance(image);
+						if (sharpnessVariance < MIN_IMAGE_SHARPNESS_VARIANCE) {
+							failedChecks.add("Blur validation failed: image is not sufficiently sharp (sharpness "
+									+ Math.round(sharpnessVariance) + ").");
+						}
+					}
+				}
+			} catch (Exception exception) {
+				logger.error("Unable to validate image field {}", element.getId(), exception);
+				failedChecks.add("Image quality validation could not be completed.");
+			}
+
+			if (!failedChecks.isEmpty()) {
+				allImagesValid = false;
+				String fieldCaption = StringUtils.defaultIfBlank(
+						get18nCaption(element.getId(), element.getCaption()), element.getId());
+				String fieldMessage = fieldCaption + ": " + String.join(" ", failedChecks);
+				validationMessages.add(fieldMessage);
+				if (imageStateField != null) {
+					imageStateField.setInvalid(true);
+					imageStateField.setErrorMessage(String.join(" ", failedChecks));
+				}
+			} else if (imageStateField != null) {
+				imageStateField.setInvalid(false);
+				imageStateField.setErrorMessage(null);
+			}
+		}
+
+		if (!allImagesValid) {
+			hasErrorFormValues(14);
+			Notification.show(String.join("\n", validationMessages), 8000, Position.MIDDLE)
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+		}
+
+		return allImagesValid;
+	}
 
 	private double calculateAverageBrightness(BufferedImage image) {
 		long sampleCount = 0;
@@ -4718,7 +4558,7 @@ public class CampaignFormBuilder extends VerticalLayout {
 
 		}
 
-//		validateImageQualityBeforeSave();
+		validateImageQualityBeforeSave();
 
 		fields.forEach((key, value) -> {
 			Component formField = fields.get(key);

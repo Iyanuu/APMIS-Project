@@ -208,14 +208,33 @@ public class ApmisCampaignResource {// extends EntityDtoResource {
 		}
 	}
 
+//	@GET
+//	@Path("/campaignformdata")
+//
+//	public List<CampaignFormDataDto> getAllCampaignFormDataWithoutTime(@QueryParam("fetchDataFromIndex") Integer first,
+//			@QueryParam("dataFetchSize") Integer max,@QueryParam("includeArchived") Boolean includeArchived) {
+//		return FacadeProvider.getCampaignFormDataFacade().getAllActiveData(first, max, includeArchived );
+//
+//	}
+	
 	@GET
 	@Path("/campaignformdata")
+	public List<CampaignFormDataDto> getAllCampaignFormDataWithoutTime(
+	        @QueryParam("fetchDataFromIndex") Integer first,
+	        @QueryParam("dataFetchSize") Integer max,
+	        @QueryParam("includeArchived") Boolean includeArchived,
+	        @QueryParam("campaign_uuid") String campaignUuid,
+	        @QueryParam("campaignForm_uuid") String campaignFormMetaUuid) {
 
-	public List<CampaignFormDataDto> getAllCampaignFormDataWithoutTime(@QueryParam("fetchDataFromIndex") Integer first,
-			@QueryParam("dataFetchSize") Integer max,@QueryParam("includeArchived") Boolean includeArchived) {
-		return FacadeProvider.getCampaignFormDataFacade().getAllActiveData(first, max, includeArchived );
-
+	    return FacadeProvider.getCampaignFormDataFacade()
+	            .getAllActiveData(
+	                    first,
+	                    max,
+	                    includeArchived,
+	                    campaignUuid,
+	                    campaignFormMetaUuid);
 	}
+	
 	
 	
 	@Context

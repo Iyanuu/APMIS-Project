@@ -229,6 +229,24 @@
         <attr name="slim" />
     </declare-styleable>
 
+    <declare-styleable name="ControlTextBoxField">
+        <attr name="labelCaption" />
+        <attr name="labelColor" />
+        <attr name="textAlignment" />
+        <attr name="gravity" />
+        <!--<attr name="hint" />-->
+        <attr name="description" />
+        <attr name="required" />
+        <attr name="singleLine" />
+        <attr name="maxLines" />
+        <attr name="maxLength" />
+        <attr name="minLength" />
+        <attr name="textArea" />
+        <attr name="userEditRight" />
+        <attr name="inputType" />
+        <attr name="slim" />
+    </declare-styleable>
+
     <declare-styleable name="ControlTextEditFieldRange">
         <attr name="labelCaption" />
         <attr name="labelColor" />

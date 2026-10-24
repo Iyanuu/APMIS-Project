@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashSet;
@@ -250,7 +251,9 @@ public class SentMessageView extends VerticalLayout implements RouterLayout {
 		});
 
 		formAccessFilter = new ComboBox<FormAccess>("Form Access");
-		formAccessFilter.setItems(FormAccess.values());
+		formAccessFilter.setItems(Arrays.stream(FormAccess.values())
+                .filter(value -> value != FormAccess.MODALITY_PRE  && value != FormAccess.MODALITY_POST && value != FormAccess.EAG)
+                .collect(Collectors.toList()));
 		formAccessFilter.setClearButtonVisible(true);
 		formAccessFilter.addValueChangeListener(e -> {
 

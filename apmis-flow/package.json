@@ -1,6 +1,6 @@
 {
-  "name": "no-name",
   "license": "UNLICENSED",
+  "name": "no-name",
   "dependencies": {
     "@polymer/iron-icon": "3.0.1",
     "@polymer/iron-iconset-svg": "3.0.1",
@@ -8,6 +8,7 @@
     "@polymer/iron-meta": "3.0.1",
     "@polymer/iron-resizable-behavior": "3.0.1",
     "@polymer/polymer": "3.5.1",
+    "@vaadin-component-factory/vcf-anchor-nav": "23.3.0",
     "@vaadin-component-factory/vcf-nav": "1.0.6",
     "@vaadin-component-factory/vcf-tooltip": "22.0.0",
     "@vaadin/accordion": "23.3.8",
@@ -107,16 +108,16 @@
     "@vaadin/vertical-layout": "23.3.8",
     "@vaadin/virtual-list": "23.3.8",
     "construct-style-sheets-polyfill": "3.1.0",
-    "date-fns": "2.29.3",
+    "date-fns": "2.16.0",
     "highcharts": "^9.2.2",
     "line-awesome": "1.3.0",
     "lit": "2.6.1",
     "lumo-css-framework": "^4.0.10"
   },
   "devDependencies": {
-    "@babel/core": "^7.29.7",
+    "@rollup/plugin-node-resolve": "^11.2.0",
     "async": "3.2.2",
-    "babel-loader": "^8.4.1",
+    "babel-loader": "^8.3.0",
     "chokidar": "^3.5.0",
     "compression-webpack-plugin": "4.0.1",
     "css-loader": "5.2.7",
@@ -128,7 +129,12 @@
     "glob": "7.2.3",
     "html-webpack-plugin": "4.5.1",
     "lit-css-loader": "0.1.0",
+    "lit-element": "^3.3.3",
+    "lit-html": "^2.8.0",
+    "lit-loader": "^0.1.1",
     "loader-utils": "2.0.4",
+    "rollup-plugin-lit-css": "^2.1.0",
+    "rollup-plugin-styles": "^3.14.1",
     "strip-css-comments": "5.0.0",
     "typescript": "4.9.3",
     "webpack": "4.46.0",
@@ -245,8 +251,9 @@
       "@vaadin/vaadin-virtual-list": "23.3.8",
       "@vaadin/vertical-layout": "23.3.8",
       "@vaadin/virtual-list": "23.3.8",
+      "@webcomponents/webcomponentsjs": "^2.2.10",
       "construct-style-sheets-polyfill": "3.1.0",
-      "date-fns": "2.29.3",
+      "date-fns": "2.16.0",
       "line-awesome": "1.3.0",
       "lit": "2.6.1",
       "lumo-css-framework": "^4.0.10"
@@ -275,7 +282,7 @@
       "workbox-precaching": "6.5.4",
       "workbox-webpack-plugin": "6.5.0"
     },
-    "hash": "c43314f136a6d0e47d72ffca41091dc75c001ec353b159cbe7ee7fc434782a47"
+    "hash": "90aa05cca41241ab712c8e2121d60079e4c6013750069a57cb185a98502d90e5"
   },
   "overrides": {
     "@vaadin/bundles": "$@vaadin/bundles",
@@ -378,16 +385,17 @@
     "@vaadin/vaadin-virtual-list": "$@vaadin/vaadin-virtual-list",
     "@vaadin/vertical-layout": "$@vaadin/vertical-layout",
     "@vaadin/virtual-list": "$@vaadin/virtual-list",
+    "@polymer/polymer": "$@polymer/polymer",
+    "@vaadin-component-factory/vcf-anchor-nav": "$@vaadin-component-factory/vcf-anchor-nav",
+    "@vaadin-component-factory/vcf-nav": "$@vaadin-component-factory/vcf-nav",
+    "@vaadin-component-factory/vcf-tooltip": "$@vaadin-component-factory/vcf-tooltip",
     "@vaadin/common-frontend": "$@vaadin/common-frontend",
     "construct-style-sheets-polyfill": "$construct-style-sheets-polyfill",
-    "lit": "$lit",
-    "@polymer/polymer": "$@polymer/polymer",
-    "@vaadin-component-factory/vcf-tooltip": "$@vaadin-component-factory/vcf-tooltip",
     "date-fns": "$date-fns",
-    "chokidar": "$chokidar",
     "highcharts": "$highcharts",
-    "@vaadin-component-factory/vcf-nav": "$@vaadin-component-factory/vcf-nav",
+    "line-awesome": "$line-awesome",
+    "lit": "$lit",
     "lumo-css-framework": "$lumo-css-framework",
-    "line-awesome": "$line-awesome"
+    "chokidar": "$chokidar"
   }
 }

@@ -64,14 +64,19 @@ import de.symeda.sormas.app.R;
 import de.symeda.sormas.app.backend.campaign.data.CampaignFormData;
 import de.symeda.sormas.app.backend.campaign.form.CampaignFormMeta;
 import de.symeda.sormas.app.backend.common.DatabaseHelper;
+import de.symeda.sormas.app.campaign.CampaignFormDataFragmentUtils;
 import de.symeda.sormas.app.component.controls.ControlDateField;
 import de.symeda.sormas.app.component.controls.ControlPropertyField;
 import de.symeda.sormas.app.component.controls.ControlSpinnerField;
+import de.symeda.sormas.app.component.controls.ControlTextBoxField;
 import de.symeda.sormas.app.component.controls.ControlTextReadField;
+import de.symeda.sormas.app.component.controls.ControlValidatedTextField;
 import de.symeda.sormas.app.databinding.FragmentCampaignDataReadLayoutBinding;
 import de.symeda.sormas.app.util.TextViewBindingAdapters;
 
 import static de.symeda.sormas.app.campaign.CampaignFormDataFragmentUtils.createControlDateEditField;
+import static de.symeda.sormas.app.campaign.CampaignFormDataFragmentUtils.createControlTextBoxField;
+import static de.symeda.sormas.app.campaign.CampaignFormDataFragmentUtils.createControlTextBoxReadField;
 import static de.symeda.sormas.app.campaign.CampaignFormDataFragmentUtils.createControlTextReadField;
 import static de.symeda.sormas.app.campaign.CampaignFormDataFragmentUtils.createControlImageReadField;
 import static de.symeda.sormas.app.campaign.CampaignFormDataFragmentUtils.getExpressionValue;
@@ -1072,6 +1077,10 @@ public class CampaignFormDataReadFragment extends BaseReadFragment<FragmentCampa
                             }else if(type == CampaignFormElementType.DROPDOWN){
                                 ControlTextReadField.setValue((ControlTextReadField) dynamicField, optionsValues.get(value), null, null, null);
                                 //optionsValues.get(value)
+                            }else if (type == CampaignFormElementType.IMAGE){
+                                ControlImageEditField.setValue((ControlImageEditField) dynamicField, rawFormValuesMap.get(campaignFormElement.getId()));
+                            } else if (type == CampaignFormElementType.TEXTBOX){
+                                ControlTextBoxField.setValueReadOnly((ControlTextBoxField) dynamicField, value);
                             }else {
                                 ControlTextReadField.setValue((ControlTextReadField) dynamicField, value, null, null, null);
                             }
@@ -1165,6 +1174,10 @@ public class CampaignFormDataReadFragment extends BaseReadFragment<FragmentCampa
                             }else if(type == CampaignFormElementType.DROPDOWN){
                                 ControlTextReadField.setValue((ControlTextReadField) dynamicField, optionsValues.get(value), null, null, null);
                                 //optionsValues.get(value)
+                            }else if (type == CampaignFormElementType.IMAGE){
+                                ControlImageEditField.setValue((ControlImageEditField) dynamicField, rawFormValuesMap.get(campaignFormElement.getId()));
+                            } else if (type == CampaignFormElementType.TEXTBOX){
+                                ControlTextBoxField.setValueReadOnly((ControlTextBoxField) dynamicField, value);
                             }else {
                                 ControlTextReadField.setValue((ControlTextReadField) dynamicField, value, null, null, null);
                             }
@@ -1226,6 +1239,10 @@ public class CampaignFormDataReadFragment extends BaseReadFragment<FragmentCampa
                             imageField.setValue(imageValue);      // raw Map/List, not the stringified value
                         }
                         dynamicField = imageField;
+                    }else if (type == CampaignFormElementType.TEXTBOX) {
+                        ControlTextBoxField textBoxField = createControlTextBoxReadField(campaignFormElement, requireContext(), getUserTranslations(campaignFormMeta));
+                        textBoxField.setShowCaption(true);
+                        dynamicField = textBoxField;
                     }else{
                         dynamicField = createControlTextReadField(campaignFormElement, requireContext(), getUserTranslations(campaignFormMeta));
                         dynamicField.setShowCaption(true);
@@ -1300,11 +1317,14 @@ public class CampaignFormDataReadFragment extends BaseReadFragment<FragmentCampa
                             }else {
                                 ControlTextReadField.setValue((ControlTextReadField) dynamicField, value, null, null, null, false);
                             }
+                        }else if (type == CampaignFormElementType.VALIDATEDTEXT){
+                            ControlTextReadField.setValue((ControlValidatedTextField) dynamicField, value, null, null, null, true);
                         }else if (type == CampaignFormElementType.RANGE){
                             ControlTextReadField.setValue((ControlTextReadField) dynamicField, value, null, null, null, true);
-                        }
-                        else if (type == CampaignFormElementType.IMAGE){
+                        } else if (type == CampaignFormElementType.IMAGE){
                             ControlImageEditField.setValue((ControlImageEditField) dynamicField, rawFormValuesMap.get(campaignFormElement.getId()));
+                        } else if (type == CampaignFormElementType.TEXTBOX){
+                            ControlTextBoxField.setValue((ControlTextBoxField) dynamicField, value);
                         }
                         else{
                             ControlTextReadField.setValue((ControlTextReadField) dynamicField, value, null, null, null);
@@ -1615,6 +1635,7 @@ public class CampaignFormDataReadFragment extends BaseReadFragment<FragmentCampa
         if (record.getRegion() != null) {
             record.setArea(record.getRegion().getArea());
         }
+
         contentBinding.setData(record);
         applyGeographyLevelVisibility(contentBinding);
     }

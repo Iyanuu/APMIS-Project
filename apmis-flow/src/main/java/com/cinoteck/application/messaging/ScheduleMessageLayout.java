@@ -3,6 +3,7 @@ package com.cinoteck.application.messaging;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -153,7 +154,9 @@ public class ScheduleMessageLayout extends VerticalLayout{
 		areaSelector.setItems(regions);
 		regionSelector.setItems(provinces);
 		districtSelector.setItems(districts);
-		formAccessSelector.setItems(FormAccess.values());
+		formAccessSelector.setItems(Arrays.stream(FormAccess.values())
+                .filter(value -> value != FormAccess.MODALITY_PRE  && value != FormAccess.MODALITY_POST  && value != FormAccess.EAG)
+                .collect(Collectors.toList()));
 		formAccessSelector.setClearButtonVisible(true);
 
 		binder.forField(messageContent).asRequired("Message Content is Required").bind(MessageScheduleDto::getMessageContent,

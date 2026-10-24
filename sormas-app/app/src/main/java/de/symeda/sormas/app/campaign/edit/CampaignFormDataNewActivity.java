@@ -23,6 +23,7 @@ import static android.view.View.GONE;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -33,7 +34,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
- 
+
 import java.util.Calendar;
  import java.util.Comparator;
 import java.util.Date;
@@ -72,6 +73,7 @@ import de.symeda.sormas.app.core.async.TaskResultHolder;
 import de.symeda.sormas.app.core.notification.NotificationHelper;
 import de.symeda.sormas.app.util.Bundler;
 
+import static de.symeda.sormas.app.backend.common.DatabaseHelper.getString;
 import static de.symeda.sormas.app.campaign.CampaignFormDataFragmentUtils.createControlTextEditField;
 import static de.symeda.sormas.app.campaign.CampaignFormDataFragmentUtils.createControlTextEditFieldDecimalExpression;
 import static de.symeda.sormas.app.campaign.CampaignFormDataFragmentUtils.createControlTextEditFieldRangeOnly;
@@ -133,6 +135,9 @@ public class CampaignFormDataNewActivity extends BaseEditActivity<CampaignFormDa
         campaignFormDataNewFragment.setLiveValidationDisabled(true);
         return campaignFormDataNewFragment;
     }
+
+
+
 
     @Override
     public void saveData() {
@@ -274,7 +279,7 @@ public class CampaignFormDataNewActivity extends BaseEditActivity<CampaignFormDa
 
                 }
         }
- 
+
         if (campaignFormDataToSave.getFormDate() != null) {
             Date date = campaignFormDataToSave.getFormDate();
 
@@ -318,6 +323,9 @@ public class CampaignFormDataNewActivity extends BaseEditActivity<CampaignFormDa
                         - Long.parseLong(lotNo.getValue().toString()) == 0)
             ) {
                 saveChecker = false;
+//                generateErroMessageByLevel(0);
+                NotificationHelper.showNotification(this, ERROR, generateErroMessageByLevel(7));
+
                 break;
             }
             }
@@ -348,18 +356,26 @@ public class CampaignFormDataNewActivity extends BaseEditActivity<CampaignFormDa
             if (CampaignFormMetaGeographyLevel.REGION.toString().equals(geographyLevel)) {
                 if (campaignFormDataToSave.getArea() == null) {
                     saveChecker = false;
+//                    generateErroMessageByLevel(2);
+
                 }
             } else if (CampaignFormMetaGeographyLevel.PROVINCE.toString().equals(geographyLevel)) {
                 if (campaignFormDataToSave.getRegion() == null) {
                     saveChecker = false;
+//                    generateErroMessageByLevel(3);
+
                 }
             } else if (CampaignFormMetaGeographyLevel.DISTRICT.toString().equals(geographyLevel)) {
                 if (campaignFormDataToSave.getDistrict() == null) {
                     saveChecker = false;
+//                    generateErroMessageByLevel(4);
+
                 }
             } else {
                 if (campaignFormDataToSave.getCommunity() == null) {
                     saveChecker = false;
+//                    generateErroMessageByLevel(5);
+
                 }
             }
 
@@ -392,7 +408,10 @@ public class CampaignFormDataNewActivity extends BaseEditActivity<CampaignFormDa
 
                     FragmentValidator.validate(getContext(), getActiveFragment().getContentBinding(), minDate, maxDate, formDate);
                 }catch (ValidationException e) {
-                        NotificationHelper.showNotification(this, ERROR, e.getMessage());
+//                    System.out.println("About to fetch validation error from activity ------");
+//                    System.out.println(" meaage validation error from activity ------" + e.getMessage());
+
+                    NotificationHelper.showNotification(this, ERROR, e.getMessage());
                         return;
                 }
             }
@@ -407,7 +426,13 @@ public class CampaignFormDataNewActivity extends BaseEditActivity<CampaignFormDa
                 public void doInBackground(TaskResultHolder resultHolder) throws DaoException {
                 	campaignFormDataToSave.setRecordversion(campaignFormDataToSave.getRecordversion() == null ? 1L : campaignFormDataToSave.getRecordversion());
 //
-                    DatabaseHelper.getCampaignFormDataDao().saveAndSnapshot(campaignFormDataToSave);
+//                    DatabaseHelper.getCampaignFormDataDao().saveAndSnapshot(campaignFormDataToSave);
+                  try{
+                  DatabaseHelper.getCampaignFormDataDao().saveAndSnapshot(campaignFormDataToSave);
+                  } catch (DaoException exx) {
+                    Log.e("CampaignFormDataNewActivity", "Failed to save campaign form data------", exx);
+                      throw exx;   // rethrow so the async task still reports failure
+                  }
                 }
 
                 @Override
@@ -423,30 +448,31 @@ public class CampaignFormDataNewActivity extends BaseEditActivity<CampaignFormDa
             }.executeOnThreadPool();
         } else {
             if(campaignFormDataToSave.getFormDate() == null){
-                NotificationHelper.showNotification(this, ERROR, "Form Date cannot be left Empty.");
+//                generateErroMessageByLevel(1);
+                NotificationHelper.showNotification(this, ERROR, generateErroMessageByLevel(1) );
 
             }else if(campaignFormDataToSave.getCommunity() == null){
                     String geoLevel = campaignFormDataToSave.getCampaignFormMeta().getGeographylevel();
                     switch (geoLevel == null ? "CLUSTER" : geoLevel) {
                         case "REGION":
                             if (campaignFormDataToSave.getArea() == null) {
-                                NotificationHelper.showNotification(this, ERROR, "Region cannot be left Empty. Please select a region to proceed.");
+                                NotificationHelper.showNotification(this, ERROR, generateErroMessageByLevel(2));
                             }
                             break;
                         case "PROVINCE":
                             if (campaignFormDataToSave.getRegion() == null) {
-                                NotificationHelper.showNotification(this, ERROR, "Province cannot be left Empty. Please select a province to proceed.");
+                                NotificationHelper.showNotification(this, ERROR, generateErroMessageByLevel(3));
                             }
                             break;
                         case "DISTRICT":
                             if (campaignFormDataToSave.getDistrict() == null) {
-                                NotificationHelper.showNotification(this, ERROR, "District cannot be left Empty. Please select a district to proceed.");
+                                NotificationHelper.showNotification(this, ERROR, generateErroMessageByLevel(4));
                             }
                             break;
                         case "CLUSTER":
                         default:
                             if (campaignFormDataToSave.getCommunity() == null) {
-                                NotificationHelper.showNotification(this, ERROR, "Cluster cannot be left Empty. Please select a cluster to proceed.");
+                                NotificationHelper.showNotification(this, ERROR, generateErroMessageByLevel(5));
                             }
                             break;
                     }
@@ -459,14 +485,37 @@ public class CampaignFormDataNewActivity extends BaseEditActivity<CampaignFormDa
                         (maxDate != null && formDatetoCheck.isAfter(maxDate))) {
                     // Handle the case when date is outside the allowed range
 
-                    NotificationHelper.showNotification(this, ERROR, "Form Date is Outside Validity Period.");
+                    NotificationHelper.showNotification(this, ERROR, generateErroMessageByLevel(6));
                 }
 
             } else{
-                NotificationHelper.showNotification(this, WARNING, "Lot Cluster Number Already Exist for this Lot Number.");
+                NotificationHelper.showNotification(this, WARNING, generateErroMessageByLevel(7));
             }
             return;
         }
+    }
+
+    public String generateErroMessageByLevel(int level) {
+        String message = "";
+        switch (level) {
+            case 0 :
+                return message = "Lot Number Already Exist";
+            case 1 :
+                return message = "Form Date cannot be left Empty.";
+            case 2 :
+                return message = "Region cannot be left Empty. Please select a region to proceed.";
+            case 3 :
+                return message = "Province cannot be left Empty. Please select a province to proceed.";
+            case 4 :
+                return message = "District cannot be left Empty. Please select a district to proceed.";
+            case 5 :
+                return message = "Cluster cannot be left Empty. Please select a cluster to proceed.";
+            case 6 :
+                return message = "Form Date is Outside Validity Period.";
+            case 7 :
+                return message = "Lot Cluster Number Already Exist for this Lot Number.";
+        }
+        return message;
     }
 
     public String dateFormatterLongAndMobile(Object value) {

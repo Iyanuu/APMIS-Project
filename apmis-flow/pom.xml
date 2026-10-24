@@ -373,6 +373,12 @@
 
 	<build>
 		<defaultGoal>jetty:run</defaultGoal>
+		<resources>
+        	<resource>
+            	<directory>src/main/resources</directory>
+            	<filtering>true</filtering>
+       		</resource>
+    	</resources>
 		<plugins>
 			<!-- Define newer versions of Java compiler and war plugin to 
                  better support latest JDK versions. -->
