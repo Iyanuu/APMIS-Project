@@ -677,4 +677,17 @@
         <item name="android:textAllCaps">true</item>
     </style>
 
+    <style name="ControlTextAreaStyle" parent="ControlTextFieldStyle">
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">@dimen/maxControlHeight</item>
+        <item name="android:maxHeight">@dimen/textAreaMaxHeight</item>
+        <item name="android:maxLines">5</item>
+        <item name="android:gravity">top|start</item>
+        <item name="android:inputType">textMultiLine|textCapSentences</item>
+        <item name="android:scrollbars">vertical</item>
+        <item name="android:scrollHorizontally">false</item>
+        <item name="android:paddingTop">@dimen/textViewTopPadding</item>
+        <item name="android:paddingBottom">@dimen/textViewBottomPadding</item>
+    </style>
+
 </resources>

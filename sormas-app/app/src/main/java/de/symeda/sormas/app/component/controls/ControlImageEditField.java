@@ -148,6 +148,14 @@ public class ControlImageEditField extends ControlPropertyEditField<Object> {
         imageField.setFieldValue(value);
     }
 
+
+    @BindingAdapter(value = { "value", "record"}, requireAll = false)
+    public static void setValue(ControlImageEditField imageField, Object value, CampaignFormData record) {
+        imageField.setCampaignFormDataUuid(record.getUuid());
+        imageField.setRecord(record);
+        imageField.setFieldValue(value);
+    }
+
     @Override
     protected void initialize(Context context, AttributeSet attrs, int defStyle) {
         // nothing to read from XML for now

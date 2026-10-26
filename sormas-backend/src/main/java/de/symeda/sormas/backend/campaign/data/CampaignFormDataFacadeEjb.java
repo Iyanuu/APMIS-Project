@@ -2580,6 +2580,12 @@ if(criteria.getUserLanguage() != null) {
 	}
 	
 	@Override
+	public List<CampaignFormDataDto> getAllActiveData(Integer first, Integer max, Boolean includeArchived, String campaignUuid, String campaignFormMetaUuid) {
+		return campaignFormDataService.getAllActiveData(first, max, includeArchived, campaignUuid, campaignFormMetaUuid).stream().map(c -> convertToDtoWithArchive(c)).collect(Collectors.toList());
+	}
+	
+	
+	@Override
 	public Integer getAllActiveDataTotalRowCount() {
 		StringBuilder selectBuilder = new StringBuilder("SELECT count(id) from campaignformdata where archived is not null");
 		BigInteger inte = (BigInteger) em.createNativeQuery(selectBuilder.toString()).getSingleResult();

@@ -11776,6 +11776,11 @@ ALTER TABLE public.campaignformdata ADD CONSTRAINT fk_campaignformdata_area_id F
 INSERT INTO schema_version (version_number, comment) VALUES (498, 'Updating District Entry to geography Type on history table and allowing Area, Province data entry');
 
 
+ALTER TABLE public.campaignformdata_history ALTER COLUMN region_id DROP NOT NULL, ALTER COLUMN district_id DROP NOT NULL;
+
+INSERT INTO schema_version (version_number, comment) VALUES (499, 'Updating CampaignFormData_History Table to recieve null district and province values');
+
+
 
 
 

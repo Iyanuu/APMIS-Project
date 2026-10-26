@@ -124,7 +124,14 @@ public interface CampaignFormDataFacade {
 	List<CampaignFormDataDto> getAllActive();
 
 	List<CampaignFormDataDto> getAllActiveData(Integer first, Integer Max, Boolean includeArchived);
-
+	
+	List<CampaignFormDataDto> getAllActiveData(
+	        Integer first,
+	        Integer max,
+	        Boolean includeArchived,
+	        String campaignUuid,
+	        String campaignFormMetaUuid);
+	
 	List<CampaignFormDataDto> getAllActiveRef();
 
 	void overwriteCampaignFormData(CampaignFormDataDto existingData, CampaignFormDataDto newData);

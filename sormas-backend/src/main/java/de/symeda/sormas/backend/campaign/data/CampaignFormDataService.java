@@ -543,6 +543,51 @@ public class CampaignFormDataService extends AdoServiceWithUserFilter<CampaignFo
 
 		// return em.createQuery(cq).getResultList();
 	}
+	
+	public List<CampaignFormData> getAllActiveData(Integer first, Integer max, Boolean includeArchived, String campaignUuid, String campaignFormMetaUuid ) {
+
+		List<CampaignFormData> emptyList = new ArrayList<>();
+		if (max > 1000 || max == null || first == null || max < 0 || first < 0) {
+			return emptyList;
+		}
+
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<CampaignFormData> cq = cb.createQuery(CampaignFormData.class);
+		Root<CampaignFormData> from = cq.from(getElementClass());
+
+		Predicate filter = cb.and();
+		
+		if (includeArchived != null) {
+			if (!includeArchived) {
+				filter = CriteriaBuilderHelper.and(cb, cb.isFalse(from.get(CampaignFormData.ARCHIVED)));
+				cq.where(filter);
+			}
+
+		}
+		
+	    if (campaignUuid != null && !campaignUuid.trim().isEmpty()) {
+	        filter = CriteriaBuilderHelper.and(cb, filter,
+	                cb.equal(from.get(CampaignFormData.CAMPAIGN).get(AbstractDomainObject.UUID), campaignUuid));
+	    }
+	    
+	    
+ 
+	    if (campaignFormMetaUuid != null && !campaignFormMetaUuid.trim().isEmpty()) {
+	        filter = CriteriaBuilderHelper.and(cb, filter,
+	                cb.equal(from.get(CampaignFormData.CAMPAIGN_FORM_META).get(AbstractDomainObject.UUID), campaignFormMetaUuid));
+	    }
+	    
+	    cq.where(filter);
+	    
+		cq.orderBy(cb.asc(from.get(AbstractDomainObject.ID)));
+		logger.debug("ttttttttttttttttttttttttttyyyy " + first + "<-----firsy max ----->" + max
+				+ SQLExtractor.from(em.createQuery(cq)));
+		return QueryHelper.getResultList(em, cq, first, max);
+
+		// return em.createQuery(cq).getResultList();
+	}
+
+	
 
 	public List<CampaignFormData> getByCampaignFormMeta_id(Long meta_id) {
 		CriteriaBuilder cb = em.getCriteriaBuilder();
