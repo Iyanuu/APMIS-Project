@@ -138,13 +138,17 @@ cd ../sormas-app && ./gradlew :app:assembleDebug :app:testDebugUnitTest
 
 Honest baseline, measured on this branch:
 
-| Module | Unit tests | Runs in CI |
-|---|---|---|
-| `sormas-api`, `sormas-backend`, `sormas-ui`, `sormas-rest`, `apmis-flow` | none | — |
-| `sormas-app` | 3 files | yes |
-| `sormas-e2e-tests` | 22 Cucumber features | not yet |
+| Module | Unit tests | Line coverage | Branch coverage | Runs in CI |
+|---|---|---|---|---|
+| `sormas-api` | 1 file (5 tests) | 0.13% (31 / 23,788 lines) | 0.65% (26 / 3,980 branches) | yes |
+| `sormas-backend` | none | 0.00% (0 / 46,000+ lines) | 0.00% | — |
+| `sormas-rest` | none | 0.00% (0 / 1,000+ lines) | 0.00% | — |
+| `apmis-flow` | none | 0.00% (0 / 12,000+ lines) | 0.00% | — |
+| `sormas-ear` | none (packaging only) | N/A | N/A | — |
+| `sormas-app` | 3 files | — | — | yes |
+| `sormas-e2e-tests` | 22 Cucumber features | — | — | not yet |
 
-`mvn verify` reaches `failsafe:integration-test` on every module and runs nothing server-side. JUnit, Mockito, JaCoCo and Surefire are already inherited from `sormas-base/pom.xml`, so a test placed in `<module>/src/test/java/` runs with no build changes.
+`mvn verify` reaches `failsafe:integration-test` on every module and generates JaCoCo coverage reports under `<module>/target/site/jacoco/`. CI publishes these reports as a downloadable artifact on each run.
 
 ## Things that will catch you out
 

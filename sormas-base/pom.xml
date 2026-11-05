@@ -958,7 +958,7 @@
 						</execution>
 
 						<execution>
-							<id>analyze-coeverage</id>
+							<id>analyze-coverage</id>
 							<phase>verify</phase>
 							<goals>
 								<goal>report</goal>
@@ -974,7 +974,7 @@
 						</execution>
 
 						<execution>
-							<id>analyze-coeverage-integration</id>
+							<id>analyze-coverage-integration</id>
 							<phase>post-integration-test</phase>
 							<goals>
 								<goal>report-integration</goal>
