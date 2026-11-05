@@ -30,7 +30,7 @@ import de.symeda.sormas.api.user.UserRole;
 public class PopulationDataResource  extends EntityDtoResource {
 
 	@GET
-	@Path("/all{since}")
+	@Path("/all/{since}")
 	public List<PopulationDataDto> getAllPopulationData(@PathParam("since") long since) {
 		final Set<DistrictReferenceDto> rdto = FacadeProvider.getUserFacade().getCurrentUser().getDistricts();
 		final DistrictReferenceDto rdtox = FacadeProvider.getUserFacade().getCurrentUser().getDistrict();
@@ -52,6 +52,12 @@ public class PopulationDataResource  extends EntityDtoResource {
 		List<PopulationDataDto> result = FacadeProvider.getPopulationDataFacade()
 				.fetchPopulationDataSelectionByUserDistricts(uuids);
 		return result;
+	}
+
+	@POST
+	@Path("/getByUuids")
+	public List<PopulationDataDto> getByUuidsAlias(List<String> uuids) {
+		return getByUuids(uuids);
 	}
 
 	@GET

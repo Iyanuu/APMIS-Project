@@ -36,7 +36,7 @@ public interface CampaignFormMetaWithExpiryFacadeRetro {
 	Call<List<CampaignFormMetaExpiryDto>> getAllFormsWithExpiry();
 
 	@POST("campaignFormMetaexp/getByUuids")
-	Call<List<String>> pullByUuids(@Body List<String> uuids);
+	Call<List<CampaignFormMetaDto>> pullByUuids(@Body List<String> uuids);
 
 	@GET("campaignFormMetaexp/all/{since}")
 	Call<List<CampaignFormMetaExpiryDto>> pullAllSince(@Path("since") long since);

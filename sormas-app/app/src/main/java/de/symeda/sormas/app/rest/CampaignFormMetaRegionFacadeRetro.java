@@ -38,5 +38,5 @@ public interface CampaignFormMetaRegionFacadeRetro {
 	Call<List<CampaignFormMetaRegionDto>> pullAllSince(@Path("since") long since);
 
 	@POST("campaignforms_region/getByUuids")
-	Call<List<String>> pullByUuids(@Body List<String> uuids);
+	Call<List<CampaignFormMetaRegionDto>> pullByUuids(@Body List<String> uuids);
 }

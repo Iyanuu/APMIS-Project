@@ -42,6 +42,12 @@ public class CampaignFormMetaWithExpResource extends EntityDtoResource {
 		return FacadeProvider.getCampaignFormMetaFacade().getByUuids(uuids);
 	}
 
+	@POST
+	@Path("/getByUuids")
+	public List<CampaignFormMetaDto> getByUuidsAlias(List<String> uuids) {
+		return getByUuids(uuids);
+	}
+
 	@GET
 	@Path("/uuids")
 	public List<String> getAllUuids() {

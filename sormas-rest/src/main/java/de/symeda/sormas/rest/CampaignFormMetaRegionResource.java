@@ -31,7 +31,7 @@ import de.symeda.sormas.api.infrastructure.district.DistrictReferenceDto;
 public class CampaignFormMetaRegionResource extends EntityDtoResource {
 
 	@GET
-	@Path("/all{since}")
+	@Path("/all/{since}")
 	public List<CampaignFormMetaRegionDto> getAllCampaignFormMeta(@PathParam("since") long since) {
 		AreaReferenceDto rdto = FacadeProvider.getUserFacade().getCurrentUser().getArea();
 
@@ -54,6 +54,12 @@ public class CampaignFormMetaRegionResource extends EntityDtoResource {
 		List<CampaignFormMetaRegionDto> result = FacadeProvider.getCampaignFormMetaRegionFacade()
 				.getCampaignFormsByUserRegion(uuids);
 		return result;
+	}
+
+	@POST
+	@Path("/getByUuids")
+	public List<CampaignFormMetaRegionDto> getByUuidsAlias(List<String> uuids) {
+		return getByUuids(uuids);
 	}
 
 	@GET

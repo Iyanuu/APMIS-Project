@@ -36,7 +36,7 @@ public interface PopulationDataFacadeRetro {
 	Call<List<PopulationDataDto>> fetchPopulationDataSelectionByUserDistricts();
 
 	@POST("populationData/getByUuids")
-	Call<List<String>> pullByUuids(@Body List<String> uuids);
+	Call<List<PopulationDataDto>> pullByUuids(@Body List<String> uuids);
 
 	@GET("populationData/all/{since}")
 	Call<List<PopulationDataDto>> pullAllSince(@Path("since") long since);
