@@ -1,0 +1,46 @@
+version: 2
+updates:
+  # Maintain dependencies for the Maven server reactor
+  - package-ecosystem: "maven"
+    directory: "/sormas-base"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "maven"
+
+  # Maintain dependencies for the Android application
+  - package-ecosystem: "gradle"
+    directory: "/sormas-app"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "gradle"
+
+  # Maintain dependencies for the E2E test suite
+  - package-ecosystem: "gradle"
+    directory: "/sormas-e2e-tests"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "gradle"
+
+  # Maintain dependencies for GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "github-actions"
+

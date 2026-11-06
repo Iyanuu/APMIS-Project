@@ -1,0 +1,107 @@
+name: Dependency Vulnerability Scan
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main, development]
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: Dependency Scan (Reporting Mode)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+
+      - name: Run Trivy vulnerability scanner
+        id: trivy-scan
+        continue-on-error: true
+        run: |
+          trivy fs --format json --output trivy-results.json --severity CRITICAL,HIGH,MEDIUM,LOW --exit-code 0 .
+
+      - name: Report vulnerabilities to Job Summary
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, os, sys
+
+          json_path = 'trivy-results.json'
+
+          if not os.path.exists(json_path):
+              print("## 🛡️ Dependency Vulnerability Scan\n\nNo scan results were produced.")
+              sys.exit(0)
+
+          try:
+              with open(json_path, 'r', encoding='utf-8') as f:
+                  data = json.load(f)
+          except Exception as e:
+              print(f"## 🛡️ Dependency Vulnerability Scan\n\nFailed to parse scan output: {e}")
+              sys.exit(0)
+
+          results = data.get("Results", [])
+
+          total_vulns = 0
+          severity_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0, "UNKNOWN": 0}
+          findings_by_target = {}
+
+          for res in results:
+              target = res.get("Target", "Unknown")
+              vulns = res.get("Vulnerabilities") or []
+              if not vulns:
+                  continue
+
+              if target not in findings_by_target:
+                  findings_by_target[target] = []
+
+              for v in vulns:
+                  total_vulns += 1
+                  sev = v.get("Severity", "UNKNOWN").upper()
+                  severity_counts[sev] = severity_counts.get(sev, 0) + 1
+                  findings_by_target[target].append({
+                      "id": v.get("VulnerabilityID", "N/A"),
+                      "pkg": v.get("PkgName", "N/A"),
+                      "installed": v.get("InstalledVersion", "N/A"),
+                      "fixed": v.get("FixedVersion", "None"),
+                      "severity": sev,
+                      "url": v.get("PrimaryURL", "")
+                  })
+
+          print("## 🛡️ Dependency Vulnerability Scan\n")
+          print("> [!NOTE]")
+          print("> This scan runs in **reporting mode** (advisory / non-blocking). Findings are reported for visibility and triage before blocking gates are enforced.\n")
+
+          if total_vulns == 0:
+              print("✅ **No known dependency vulnerabilities detected.**")
+          else:
+              print(f"**Found {total_vulns} total vulnerabilities:** "
+                    f"🔴 {severity_counts.get('CRITICAL', 0)} Critical | "
+                    f"🟠 {severity_counts.get('HIGH', 0)} High | "
+                    f"🟡 {severity_counts.get('MEDIUM', 0)} Medium | "
+                    f"🔵 {severity_counts.get('LOW', 0)} Low\n")
+
+              for target, vulns in findings_by_target.items():
+                  print(f"### `{target}` ({len(vulns)} findings)\n")
+                  print("| Severity | Vulnerability | Package | Installed | Fixed In |")
+                  print("|---|---|---|---|---|")
+                  for v in vulns:
+                      vid = f"[{v['id']}]({v['url']})" if v['url'] else v['id']
+                      print(f"| **{v['severity']}** | {vid} | `{v['pkg']}` | `{v['installed']}` | `{v['fixed']}` |")
+                  print()
+          PY
+
+      - name: Upload vulnerability scan report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: dependency-vulnerability-report
+          path: trivy-results.json
+          if-no-files-found: ignore
+          retention-days: 14
